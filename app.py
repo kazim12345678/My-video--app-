@@ -10,10 +10,12 @@ st.set_page_config(
 # Sidebar – topic & style
 # -----------------------------
 st.sidebar.title("🎬 AI Creator Demo")
+
 topic = st.sidebar.text_input(
     "Topic (demo):",
-    value="3 Micro-Shifts to Get Unstuck"
+    value="Ice AI – How Small Shifts Create Big Change"
 )
+
 style = st.sidebar.selectbox(
     "Style:",
     ["Dr. Shadé Zahrai style", "Motivational coach", "Leadership", "Career growth"]
@@ -22,7 +24,7 @@ style = st.sidebar.selectbox(
 st.sidebar.markdown("---")
 st.sidebar.write(
     "This is a **fake demo**. Later we plug in your **real voice, real video, and real picture** "
-    "and connect AI processing."
+    "and connect real AI processing."
 )
 
 # -----------------------------
@@ -30,7 +32,7 @@ st.sidebar.write(
 # -----------------------------
 st.title("🎥 AI Video + Voice Demo (Shadé-style FAKE VERSION)")
 st.write(
-    "This page shows how your future system can look: "
+    "This page shows how your future system will look: "
     "**original video**, **AI-enhanced video**, **AI voice**, and "
     "**Shadé-style script & captions**. Everything here is **fake media**, "
     "but the structure is real."
@@ -47,7 +49,7 @@ col_media, col_text = st.columns([1.3, 1.7])
 with col_media:
     st.subheader("👤 Fake 'Your Picture'")
     st.image(
-        "https://via.placeholder.com/600x800.png?text=Your+Photo+Here",
+        "https://via.placeholder.com/600x800.png?text=Your+AI+Photo+Here",
         caption="Placeholder for your real face",
         use_column_width=True
     )
@@ -62,7 +64,6 @@ with col_media:
     st.markdown("---")
     st.subheader("🤖 AI-Enhanced Demo Video (Fake)")
 
-    # For demo we use another sample; later this will be your processed output
     enhanced_video_url = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
     st.video(enhanced_video_url)
     st.caption(
@@ -73,13 +74,11 @@ with col_media:
     st.markdown("---")
     st.subheader("🎙 AI Voice Demo (Fake)")
 
-    st.write("Below is a **fake AI voice** placeholder (short sample audio).")
-
     demo_audio_url = "https://samplelib.com/lib/preview/mp3/sample-3s.mp3"
     st.audio(demo_audio_url)
     st.caption(
         "Later: this will be your **real voice**, cleaned and enhanced by AI "
-        "(noise reduction, clarity, balanced volume)."
+        "(noise reduction, clarity, balanced warmth)."
     )
 
 # -----------------------------
@@ -89,15 +88,17 @@ with col_text:
     st.subheader("🧠 Demo Script (Shadé-style tone)")
 
     demo_script = f"""
-    You are not stuck because you lack talent.
+    You are not stuck because you lack intelligence.
 
-    You are stuck because you repeat the same habits every single day.
+    You are stuck because you repeat the same patterns every single day.
 
     Today, we’re talking about **{topic}**, in a **{style}** tone.
 
-    I want to share three micro-shifts
-    that can help you break the cycle
-    and rebuild your momentum.
+    Ice AI teaches us something powerful:
+    even the smallest temperature shift
+    can transform solid ice into flowing water.
+
+    **Micro-shifts create macro-change.**
 
     **Number one – Change your self-talk.**  
     Your words shape your identity.
@@ -108,6 +109,9 @@ with col_text:
     **Number three – Ask yourself:**  
     *What is one thing I can do today that my future self will thank me for?*
 
+    Just like ice melts with a tiny rise in temperature,
+    your life transforms with tiny rises in effort.
+
     Small changes create big transformation.  
     Start today.
     """
@@ -117,11 +121,12 @@ with col_text:
     st.markdown("### 🔑 Key On-Screen Text (future AI captions)")
     st.markdown(
         """
-        - “You are not stuck because you lack talent.”  
-        - “You repeat the same habits every day.”  
+        - “Micro-shifts create macro-change.”  
+        - “You repeat the same patterns every day.”  
         - “Change your self-talk.”  
         - “Momentum is built, not found.”  
         - “What will my future self thank me for?”  
+        - “Small changes create big transformation.”  
         """
     )
 
@@ -136,7 +141,7 @@ with col_text:
         **2️⃣ Video AI (future):**  
         - Blur or replace messy background  
         - Adjust brightness / contrast  
-        - Stabilize shaky footage (where possible)  
+        - Stabilize shaky footage  
 
         **3️⃣ Text & Motion (future):**  
         - Auto-generate captions from your speech  
@@ -145,13 +150,13 @@ with col_text:
 
         **4️⃣ Final Output (future):**  
         - Export MP4 ready for YouTube / LinkedIn / Reels  
-        - Same content, but more **engaging and polished**  
+        - Same content, but more engaging and polished  
         """
     )
 
 st.markdown("---")
 st.caption(
-    "This is a FAKE demo on Streamlit using sample media. "
+    "This is a FAKE demo using sample media. "
     "Next step: you send your **real voice, real video, and real picture**, "
     "and we connect this layout to real AI processing."
 )
