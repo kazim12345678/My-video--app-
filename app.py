@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="Dr. Shadé Style Demo",
+    page_title="Dr. Shadé-Style Video Demo",
     page_icon="🎥",
     layout="wide"
 )
