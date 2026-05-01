@@ -1,19 +1,49 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="Dr. Shadé-Style Video Demo",
+    page_title="AI Video + Voice Demo",
     page_icon="🎥",
     layout="wide"
 )
 
-st.title("🎥 Dr. Shadé-Style Video Demo (FAKE VERSION)")
-st.write(
-    "This is a **fake demo** showing how your future real video will look "
-    "after voice cleaning, background fix, and Shadé-style text overlays."
+# -----------------------------
+# Sidebar – topic & style
+# -----------------------------
+st.sidebar.title("🎬 AI Creator Demo")
+topic = st.sidebar.text_input(
+    "Topic (demo):",
+    value="3 Micro-Shifts to Get Unstuck"
+)
+style = st.sidebar.selectbox(
+    "Style:",
+    ["Dr. Shadé Zahrai style", "Motivational coach", "Leadership", "Career growth"]
 )
 
-col_media, col_script = st.columns([1.2, 1.8])
+st.sidebar.markdown("---")
+st.sidebar.write(
+    "This is a **fake demo**. Later we plug in your **real voice, real video, and real picture** "
+    "and connect AI processing."
+)
 
+# -----------------------------
+# Main title
+# -----------------------------
+st.title("🎥 AI Video + Voice Demo (Shadé-style FAKE VERSION)")
+st.write(
+    "This page shows how your future system can look: "
+    "**original video**, **AI-enhanced video**, **AI voice**, and "
+    "**Shadé-style script & captions**. Everything here is **fake media**, "
+    "but the structure is real."
+)
+
+# -----------------------------
+# Layout
+# -----------------------------
+col_media, col_text = st.columns([1.3, 1.7])
+
+# -----------------------------
+# LEFT: Picture + videos + AI voice
+# -----------------------------
 with col_media:
     st.subheader("👤 Fake 'Your Picture'")
     st.image(
@@ -23,25 +53,49 @@ with col_media:
     )
 
     st.markdown("---")
-    st.subheader("🎞 Fake Processed Video (Working Demo)")
+    st.subheader("🎞 Original Demo Video (Fake)")
 
-    st.write("Below is a **working demo video** (placeholder).")
+    original_video_url = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
+    st.video(original_video_url)
+    st.caption("This represents your **raw mobile video** before AI processing.")
 
-    # 100% working MP4 link for Streamlit Cloud
-    demo_video_url = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
-    st.video(demo_video_url)
+    st.markdown("---")
+    st.subheader("🤖 AI-Enhanced Demo Video (Fake)")
 
-    st.caption("Later: this will be your real processed video.")
+    # For demo we use another sample; later this will be your processed output
+    enhanced_video_url = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
+    st.video(enhanced_video_url)
+    st.caption(
+        "This represents your **AI-upgraded video** "
+        "(cleaner voice, better background, on-screen text)."
+    )
 
-with col_script:
-    st.subheader("🧠 Demo Script (Dr. Shadé-style tone)")
+    st.markdown("---")
+    st.subheader("🎙 AI Voice Demo (Fake)")
 
-    demo_script = """
+    st.write("Below is a **fake AI voice** placeholder (short sample audio).")
+
+    demo_audio_url = "https://samplelib.com/lib/preview/mp3/sample-3s.mp3"
+    st.audio(demo_audio_url)
+    st.caption(
+        "Later: this will be your **real voice**, cleaned and enhanced by AI "
+        "(noise reduction, clarity, balanced volume)."
+    )
+
+# -----------------------------
+# RIGHT: Script, captions, AI pipeline
+# -----------------------------
+with col_text:
+    st.subheader("🧠 Demo Script (Shadé-style tone)")
+
+    demo_script = f"""
     You are not stuck because you lack talent.
 
     You are stuck because you repeat the same habits every single day.
 
-    Today, I want to share three micro-shifts
+    Today, we’re talking about **{topic}**, in a **{style}** tone.
+
+    I want to share three micro-shifts
     that can help you break the cycle
     and rebuild your momentum.
 
@@ -60,7 +114,7 @@ with col_script:
 
     st.markdown(demo_script)
 
-    st.markdown("### 🔑 Key On-Screen Text (future captions)")
+    st.markdown("### 🔑 Key On-Screen Text (future AI captions)")
     st.markdown(
         """
         - “You are not stuck because you lack talent.”  
@@ -71,5 +125,33 @@ with col_script:
         """
     )
 
+    st.markdown("### ⚙️ Future AI Pipeline (what code will do later)")
+    st.markdown(
+        """
+        **1️⃣ Voice AI (future):**  
+        - Reduce fan / room noise  
+        - Enhance clarity and warmth  
+        - Keep your natural tone, just more professional  
+
+        **2️⃣ Video AI (future):**  
+        - Blur or replace messy background  
+        - Adjust brightness / contrast  
+        - Stabilize shaky footage (where possible)  
+
+        **3️⃣ Text & Motion (future):**  
+        - Auto-generate captions from your speech  
+        - Highlight key phrases (bold, color, zoom)  
+        - Time text with your voice for Shadé-style emphasis  
+
+        **4️⃣ Final Output (future):**  
+        - Export MP4 ready for YouTube / LinkedIn / Reels  
+        - Same content, but more **engaging and polished**  
+        """
+    )
+
 st.markdown("---")
-st.caption("Fake demo only. Later we plug in your real voice, video, and picture.")
+st.caption(
+    "This is a FAKE demo on Streamlit using sample media. "
+    "Next step: you send your **real voice, real video, and real picture**, "
+    "and we connect this layout to real AI processing."
+)
