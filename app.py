@@ -28,7 +28,7 @@ with col_media:
     st.write("Below is a **working demo video** (placeholder).")
 
     # 100% working MP4 link for Streamlit Cloud
-    demo_video_url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+    demo_video_url = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
     st.video(demo_video_url)
 
     st.caption("Later: this will be your real processed video.")
