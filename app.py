@@ -1,132 +1,144 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="AI Video + Voice Demo",
-    page_icon="🎥",
+    page_title="Maintenance KPIs – AI Demo",
+    page_icon="📊",
     layout="wide"
 )
 
 # -----------------------------
-# Sidebar – topic & style
+# Sidebar – topic & audience
 # -----------------------------
-st.sidebar.title("🎬 AI Creator Demo")
+st.sidebar.title("🎬 AI Trainer Demo")
 
-topic = st.sidebar.text_input(
-    "Topic (demo):",
-    value="Ice AI – How Small Shifts Create Big Change"
-)
-
-style = st.sidebar.selectbox(
-    "Style:",
-    ["Dr. Shadé Zahrai style", "Motivational coach", "Leadership", "Career growth"]
+audience = st.sidebar.selectbox(
+    "Audience:",
+    ["Operators", "Maintenance Technicians", "Supervisors", "Plant Manager"]
 )
 
 st.sidebar.markdown("---")
 st.sidebar.write(
-    "This is a **fake demo**. Later we plug in your **real voice, real video, and real picture** "
-    "and connect real AI processing."
+    "Fake demo: avatar + fake AI voice + sample video + real script "
+    "on **OEE, MTTR, MTBF, KPIs**."
 )
 
 # -----------------------------
 # Main title
 # -----------------------------
-st.title("🎥 AI Video + Voice Demo (Shadé-style FAKE VERSION)")
+st.title("📊 How to Improve OEE, MTTR, MTBF – AI Trainer (FAKE DEMO)")
 st.write(
-    "This page shows how your future system will look: "
-    "**original video**, **AI-enhanced video**, **AI voice**, and "
-    "**Shadé-style script & captions**. Everything here is **fake media**, "
-    "but the structure is real."
+    "This page simulates a **training video** where a person explains how to work with KPIs "
+    "like **OEE, MTTR, MTBF**. The media is fake/placeholder, but the **content and structure** "
+    "are realistic for your maintenance world."
 )
 
 # -----------------------------
 # Layout
 # -----------------------------
-col_media, col_text = st.columns([1.3, 1.7])
+col_media, col_text = st.columns([1.2, 1.8])
 
 # -----------------------------
-# LEFT: Picture + videos + AI voice
+# LEFT: Avatar + video + voice
 # -----------------------------
 with col_media:
-    st.subheader("👤 Fake 'Your Picture'")
+    st.subheader("👤 Trainer Avatar (Fake Person)")
+
+    # Human-like illustration avatar (not a real person)
     st.image(
-        "https://via.placeholder.com/600x800.png?text=Your+AI+Photo+Here",
-        caption="Placeholder for your real face",
+        "https://images.pexels.com/photos/1181519/pexels-photo-1181519.jpeg?auto=compress&cs=tinysrgb&w=600",
+        caption="Placeholder trainer – later this can be your real photo or custom avatar.",
         use_column_width=True
     )
 
     st.markdown("---")
-    st.subheader("🎞 Original Demo Video (Fake)")
+    st.subheader("🎞 Training Video Placeholder")
 
-    original_video_url = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
-    st.video(original_video_url)
-    st.caption("This represents your **raw mobile video** before AI processing.")
-
-    st.markdown("---")
-    st.subheader("🤖 AI-Enhanced Demo Video (Fake)")
-
-    enhanced_video_url = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
-    st.video(enhanced_video_url)
+    # Sample video as stand-in for your future real training video
+    video_url = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4"
+    st.video(video_url)
     st.caption(
-        "This represents your **AI-upgraded video** "
-        "(cleaner voice, better background, on-screen text)."
+        "This is a **sample video** acting as a placeholder for your real KPI/OEE training video."
     )
 
     st.markdown("---")
-    st.subheader("🎙 AI Voice Demo (Fake)")
+    st.subheader("🎙 Fake AI Voice Sample")
 
-    demo_audio_url = "https://samplelib.com/lib/preview/mp3/sample-3s.mp3"
-    st.audio(demo_audio_url)
+    audio_url = "https://samplelib.com/lib/preview/mp3/sample-3s.mp3"
+    st.audio(audio_url)
     st.caption(
         "Later: this will be your **real voice**, cleaned and enhanced by AI "
-        "(noise reduction, clarity, balanced warmth)."
+        "(noise reduction, clarity, warmth)."
     )
 
 # -----------------------------
-# RIGHT: Script, captions, AI pipeline
+# RIGHT: Script + KPI content + AI pipeline
 # -----------------------------
 with col_text:
-    st.subheader("🧠 Demo Script (Shadé-style tone)")
+    st.subheader("🧠 Trainer Script – How to Improve OEE, MTTR, MTBF")
 
-    demo_script = f"""
-    You are not stuck because you lack intelligence.
+    script = f"""
+    Welcome. Today we’re talking about **maintenance KPIs** and how to use them to actually
+    improve performance on the shop floor – not just in reports.
 
-    You are stuck because you repeat the same patterns every single day.
+    We’ll focus on four key metrics:
 
-    Today, we’re talking about **{topic}**, in a **{style}** tone.
+    1. **OEE – Overall Equipment Effectiveness**  
+       OEE tells you how effectively your line is running versus its full potential.
+       It combines **Availability, Performance, and Quality**.
 
-    Ice AI teaches us something powerful:
-    even the smallest temperature shift
-    can transform solid ice into flowing water.
+    2. **MTTR – Mean Time To Repair**  
+       MTTR measures how long it takes, on average, to fix a breakdown.
+       Lower MTTR means faster recovery and less downtime.
 
-    **Micro-shifts create macro-change.**
+    3. **MTBF – Mean Time Between Failures**  
+       MTBF tells you how long equipment runs, on average, before failing again.
+       Higher MTBF means more reliability and fewer interruptions.
 
-    **Number one – Change your self-talk.**  
-    Your words shape your identity.
+    4. **Planned vs Unplanned Downtime**  
+       This shows how much of your stoppage is controlled (PM, changeovers)
+       versus unexpected (breakdowns, minor stops).
 
-    **Number two – Take one small action.**  
-    Momentum is built, not found.
+    For **{audience}**, the goal is simple:
 
-    **Number three – Ask yourself:**  
-    *What is one thing I can do today that my future self will thank me for?*
+    - See these numbers every day  
+    - Understand what is driving them  
+    - Take small, consistent actions to improve them
 
-    Just like ice melts with a tiny rise in temperature,
-    your life transforms with tiny rises in effort.
+    **How to improve OEE:**
+    - Reduce small stops and minor jams  
+    - Improve changeover discipline and SMED  
+    - Attack chronic breakdowns with root cause analysis  
+    - Stabilize speed and reduce micro-stops
 
-    Small changes create big transformation.  
-    Start today.
+    **How to improve MTTR:**
+    - Standardize troubleshooting steps  
+    - Keep critical spares available and organized  
+    - Train technicians on common failure patterns  
+    - Use clear escalation rules when repair is stuck
+
+    **How to improve MTBF:**
+    - Strengthen preventive maintenance (PM) and condition-based checks  
+    - Fix root causes, not just symptoms  
+    - Eliminate repeat failures with permanent countermeasures  
+    - Involve operators in basic care (clean, inspect, tighten)
+
+    Remember: KPIs are not just numbers for reports.
+    They are **signals** that tell you where to focus your energy.
+
+    Small, consistent improvements in OEE, MTTR, and MTBF
+    compound into massive gains in uptime, output, and stability.
     """
 
-    st.markdown(demo_script)
+    st.markdown(script)
 
-    st.markdown("### 🔑 Key On-Screen Text (future AI captions)")
+    st.markdown("### 🔑 Key On-Screen Text (future captions)")
     st.markdown(
         """
-        - “Micro-shifts create macro-change.”  
-        - “You repeat the same patterns every day.”  
-        - “Change your self-talk.”  
-        - “Momentum is built, not found.”  
-        - “What will my future self thank me for?”  
-        - “Small changes create big transformation.”  
+        - “OEE = Availability × Performance × Quality”  
+        - “Lower MTTR → faster recovery”  
+        - “Higher MTBF → more reliability”  
+        - “KPIs are signals, not just reports”  
+        - “Small improvements compound into big results”  
         """
     )
 
@@ -146,17 +158,16 @@ with col_text:
         **3️⃣ Text & Motion (future):**  
         - Auto-generate captions from your speech  
         - Highlight key phrases (bold, color, zoom)  
-        - Time text with your voice for Shadé-style emphasis  
+        - Time text with your voice for emphasis  
 
         **4️⃣ Final Output (future):**  
-        - Export MP4 ready for YouTube / LinkedIn / Reels  
+        - Export MP4 ready for YouTube / LinkedIn / internal training  
         - Same content, but more engaging and polished  
         """
     )
 
 st.markdown("---")
 st.caption(
-    "This is a FAKE demo using sample media. "
-    "Next step: you send your **real voice, real video, and real picture**, "
-    "and we connect this layout to real AI processing."
+    "This is a FAKE demo using sample media. Next step: you send your real voice, real video, "
+    "and real picture, and we connect this layout to real AI processing outside Streamlit."
 )
