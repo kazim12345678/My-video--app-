@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import PyPDF2
 import google.generativeai as genai
-import numpy as np
-import faiss
-import pickle
 import os
 
 # --- ENTERPRISE THEME CONFIGURATION ---
@@ -42,8 +39,7 @@ else:
     st.stop()
 
 # Database Paths on Streamlit Cloud Server
-INDEX_FILE = "kazim_knowledge_index.bin"
-TEXT_FILE = "kazim_knowledge_text.pkl"
+TEXT_FILE = "kazim_knowledge_text.txt"
 FEEDBACK_FILE = "kazim_repair_ledger.csv"
 
 # Build empty historical rating ledger locally if missing
@@ -64,7 +60,7 @@ with st.sidebar:
     st.write("Train or update your assistant's permanent memory files.")
     st.write("---")
     
-    is_trained = os.path.exists(INDEX_FILE) and os.path.exists(TEXT_FILE)
+    is_trained = os.path.exists(TEXT_FILE)
     
     if is_trained:
         st.markdown('<div class="success-card"><b style="color:#00cc88;">🟢 SYSTEM ONLINE</b><br><span style="color:#a3b3a7; font-size:12px;">Local Knowledge Loaded</span></div>', unsafe_allow_html=True)
@@ -82,50 +78,35 @@ with st.sidebar:
         
         if st.button("🚀 Process & Lock Data Locally"):
             if uploaded_docs:
-                chunks = []
-                with st.spinner("Extracting engineering frameworks to server database..."):
+                full_combined_text = ""
+                with st.spinner("Processing technical text parameters..."):
                     for f in uploaded_docs:
-                        # --- BULLETPROOF TEXT PARSER TO FIX REDACTED INVALID ARGUMENT ERROR ---
                         if f.name.endswith(".txt"):
                             raw_text = f.read().decode("utf-8")
-                            lines = raw_text.split("\n")
-                            for line in lines:
-                                cleaned_line = line.strip()
-                                # Only accept lines with real troubleshooting value, skip blanks
-                                if cleaned_line and len(cleaned_line) > 3:
-                                    chunks.append(f"[M1 Blueprint Data Line]\n{cleaned_line}")
+                            full_combined_text += f"\n[SOURCE FILE: {f.name}]\n" + raw_text
                         
                         elif f.name.endswith(".pdf"):
                             reader = PyPDF2.PdfReader(f)
                             for page_num, page in enumerate(reader.pages):
                                 t = page.extract_text()
-                                if t and t.strip(): 
-                                    chunks.append(f"[Manual: {f.name} | Page: {page_num+1}]\n{t.strip()}")
+                                if t: 
+                                    full_combined_text += f"\n[Manual: {f.name} | Page: {page_num+1}]\n{t}\n"
                         
                         elif f.name.endswith((".xlsx", ".xls", ".csv")):
                             df = pd.read_csv(f) if f.name.endswith(".csv") else pd.read_excel(f)
                             for idx, row in df.iterrows():
                                 row_str = ", ".join([f"{c}: {v}" for c, v in row.items() if str(v).strip()])
                                 if row_str.strip():
-                                    chunks.append(f"[Log: {f.name} | Row: {idx}]\n{row_str}")
+                                    full_combined_text += f"\n[Log: {f.name} | Row: {idx}] {row_str}\n"
                     
-                    # Double-check that chunks is not completely empty
-                    if not chunks:
-                        st.error("No valid text data found in files! Make sure files are not blank.")
+                    if not full_combined_text.strip():
+                        st.error("No valid text found inside your files!")
                     else:
-                        # Convert texts to mathematical vector coordinates via Gemini
-                        embed_payload = genai.embed_content(model="models/text-embedding-004", content=chunks, task_type="retrieval_document")
-                        embeddings = np.array(embed_payload['embedding']).astype('float32')
-                        
-                        # Store indexed vectors and mappings safely
-                        index = faiss.IndexFlatL2(embeddings.shape[1])
-                        index.add(embeddings)
-                        faiss.write_index(index, INDEX_FILE)
-                        
-                        with open(TEXT_FILE, "wb") as f_out:
-                            pickle.dump(chunks, f_out)
+                        # Save the raw text straight into the server file system (No vector embedding step to crash!)
+                        with open(TEXT_FILE, "w", encoding="utf-8") as f_out:
+                            f_out.write(full_combined_text)
                             
-                        st.success("Knowledge library built and locked in!")
+                        st.success("Knowledge library built and locked in successfully!")
                         st.rerun()
 
 # --- MAIN FLOOR INTERFACE: RUNTIME CONTROL RADAR ---
@@ -146,14 +127,13 @@ if "query_cache" not in st.session_state:
     st.session_state.query_cache = None
 
 if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
-    if not (os.path.exists(INDEX_FILE) and os.path.exists(TEXT_FILE)):
+    if not os.path.exists(TEXT_FILE):
         st.error("Your knowledge vault is empty! Drop your files in the sidebar and process them first.")
     else:
-        with st.spinner("Scanning internal blueprints and human feedback loops..."):
-            # Load private documents 
-            index = faiss.read_index(INDEX_FILE)
-            with open(TEXT_FILE, "rb") as f_in:
-                all_chunks = pickle.load(f_in)
+        with st.spinner("Analyzing data layout and history logs..."):
+            # Load stored documents
+            with open(TEXT_FILE, "r", encoding="utf-8") as f_in:
+                master_manual_data = f_in.read()
             
             # Read star logs from drive
             repair_history = ""
@@ -162,31 +142,14 @@ if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
                 if not ledger_df.empty:
                     repair_history = "\n[PAST TECHNICIAN STAR RATINGS LOG]:\n" + ledger_df.tail(15).to_string()
 
-            # Execute context matrix search
-            search_terms = f"{line_selection} {machine_selection} {user_query}"
-            query_vector = np.array(genai.embed_content(
-                model="models/text-embedding-004", 
-                content=search_terms, 
-                task_type="retrieval_query"
-            )['embedding']).astype('float32').reshape(1, -1)
-            
-            _, indices = index.search(query_vector, 4)
-            matched_context = ""
-            
-            st.markdown("<h5 style='color:#00ffcc;'>📑 Extracted Structural Layout Blueprints Found:</h5>", unsafe_allow_html=True)
-            for idx in indices[0]:
-                if idx < len(all_chunks):
-                    matched_context += f"\n---\n{all_chunks[idx]}\n"
-                    st.caption(f"📍 {all_chunks[idx].splitlines()[0]}")
-            
-            # Construct instruction prompt blending global AI with the local file
+            # Construct structural instruction prompt for Gemini
             engineered_prompt = (
                 "You are an Elite Industrial Automation Engineer operating the KAZIM Factory Diagnostic System.\n"
-                "Your objective is to solve a machinery problem using the provided manual clippings and real historical feedback data.\n\n"
+                "Your objective is to solve a machinery problem using the provided manual blueprint context and historical field logs.\n\n"
                 "CRITICAL LOGIC OVERRIDE:\n"
                 "Examine the 'PAST TECHNICIAN STAR RATINGS LOG'. If a solution was awarded high ratings (4-5 stars), emphasize it prominently as the key path forward. "
                 "If an approach was awarded 1 star, it was verified by a live field tech as completely wrong or counterproductive—do NOT suggest it. Change your technical path immediately.\n\n"
-                f"--- PRIVATE BLUEPRINT MANUAL CLIPPINGS ---\n{matched_context}\n"
+                f"--- PRIVATE BLUEPRINT MANUAL DATA ---\n{master_manual_data}\n\n"
                 f"--- FACTORY FIELD EXPERIENCE LEDGER ---\n{repair_history}\n\n"
                 f"CURRENT BREAKDOWN SPECIFICATION: Machine {machine_selection} on {line_selection}\n"
                 f"OPERATOR REPORTED SYMPTOM: {user_query}\n\n"
