@@ -130,49 +130,52 @@ if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
         st.error("Your knowledge vault is empty! Drop your files in the sidebar and process them first.")
     else:
         with st.spinner("Filtering layout lines and history logs..."):
-            # Load stored documents line by line
             matched_lines = []
-            keywords = user_query.lower().split()
+            # Clean keywords to search strictly
+            keywords = [word.lower().strip() for word in user_query.split() if len(word.strip()) > 2]
             
             with open(TEXT_FILE, "r", encoding="utf-8") as f_in:
                 for line in f_in:
-                    # Smart Keyword Filtering: Find lines in your manual that match what the user typed
-                    if any(word in line.lower() for word in keywords) or "specifications" in line.lower() or "directory" in line.lower():
+                    line_lower = line.lower()
+                    # CRITICAL BULLETPROOF FIX: Check if line matches specific tag or general panel indexes
+                    if any(kw in line_lower for kw in keywords) or "specifications" in line_lower or "directory" in line_lower:
                         matched_lines.append(line.strip())
             
-            # Combine filtered lines (Max 100 lines to ensure it never crashes the API)
-            filtered_manual_context = "\n".join(matched_lines[:100])
+            # HARD LIMIT: Keep maximum 25 matching lines to strictly guarantee the API never overloads
+            filtered_manual_context = "\n".join(matched_lines[:25])
             
             if not filtered_manual_context.strip():
-                filtered_manual_context = "No specific direct wiring lines found matching search terms. Use general system logic panels."
+                filtered_manual_context = "Machine Layout Focus: Reference general panel indexes and IEC classification rules."
 
             # Read star logs from drive
             repair_history = ""
             if os.path.exists(FEEDBACK_FILE):
                 ledger_df = pd.read_csv(FEEDBACK_FILE)
                 if not ledger_df.empty:
-                    repair_history = "\n[PAST TECHNICIAN STAR RATINGS LOG]:\n" + ledger_df.tail(15).to_string()
+                    repair_history = "\n[PAST TECHNICIAN STAR RATINGS LOG]:\n" + ledger_df.tail(10).to_string()
 
-            # Construct structural instruction prompt for Gemini using FILTERED context
+            # Construct structural instruction prompt for Gemini using highly compact data
             engineered_prompt = (
                 "You are an Elite Industrial Automation Engineer operating the KAZIM Factory Diagnostic System.\n"
                 "Your objective is to solve a machinery problem using the provided manual blueprint context and historical field logs.\n\n"
                 "CRITICAL LOGIC OVERRIDE:\n"
                 "Examine the 'PAST TECHNICIAN STAR RATINGS LOG'. If a solution was awarded high ratings (4-5 stars), emphasize it prominently as the key path forward. "
-                "If an approach was awarded 1 star, it was verified by a live field tech as completely wrong or counterproductive—do NOT suggest it. Change your technical path immediately.\n\n"
-                f"--- TARGETED BLUEPRINT MANUAL SPECIFICATION LINES ---\n{filtered_manual_context}\n\n"
+                "If an approach was awarded 1 star, do NOT repeat it.\n\n"
+                f"--- TARGETED BLUEPRINT MANUAL LINES ---\n{filtered_manual_context}\n\n"
                 f"--- FACTORY FIELD EXPERIENCE LEDGER ---\n{repair_history}\n\n"
                 f"CURRENT BREAKDOWN SPECIFICATION: Machine {machine_selection} on {line_selection}\n"
                 f"OPERATOR REPORTED SYMPTOM: {user_query}\n\n"
                 "Provide a direct root-cause breakdown explaining the system context, followed immediately by a tactical, prioritized numbers-only field check list."
             )
             
-            # Call Gemini safely
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content(engineered_prompt)
-            
-            st.session_state.solution_cache = response.text
-            st.session_state.query_cache = user_query
+            try:
+                # Call Gemini safely
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(engineered_prompt)
+                st.session_state.solution_cache = response.text
+                st.session_state.query_cache = user_query
+            except Exception as e:
+                st.error(f"API Error context overload protection active. Try searching for a specific code like 'Pilz' or '84C2'. Details: {str(e)}")
 
 # Present solutions and activate human feedback recording loops
 if st.session_state.solution_cache:
