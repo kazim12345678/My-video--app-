@@ -23,6 +23,7 @@ st.markdown("""
         background-color: #1f2430 !important; color: #00ffcc !important;
         border: 1px solid #00ffcc !important; border-radius: 8px !important;
         padding: 0.5em 2em !important; font-weight: bold !important;
+        width: 100% !important;
     }
     .stButton>button:hover { background-color: #00ffcc !important; color: #1f2430 !important; }
     .stTextInput>div>div>input { background-color: #1a1d24 !important; color: #ffffff !important; border: 1px solid #3a3f50 !important; }
@@ -37,10 +38,10 @@ st.markdown("""
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("Missing GEMINI_API_KEY inside your local '.streamlit/secrets.toml' file!")
+    st.error("Missing GEMINI_API_KEY inside your Streamlit Advanced Secrets!")
     st.stop()
 
-# Local Storage Database Paths
+# Database Paths on Streamlit Cloud Server
 INDEX_FILE = "kazim_knowledge_index.bin"
 TEXT_FILE = "kazim_knowledge_text.pkl"
 FEEDBACK_FILE = "kazim_repair_ledger.csv"
@@ -53,7 +54,7 @@ if not os.path.exists(FEEDBACK_FILE):
 st.markdown("""
     <div class="header-panel">
         <h1 style='margin:0; color:#00ffcc; font-family:sans-serif;'>🛠️ KAZIM AI Assistant Console</h1>
-        <p style='margin:5px 0 0 0; color:#8b949e; font-size:14px;'>Self-Learning Dynamic Diagnostics • Local Workstation Secure Sandbox</p>
+        <p style='margin:5px 0 0 0; color:#8b949e; font-size:14px;'>Self-Learning Dynamic Diagnostics • Production Floor Assistant</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -82,39 +83,50 @@ with st.sidebar:
         if st.button("🚀 Process & Lock Data Locally"):
             if uploaded_docs:
                 chunks = []
-                with st.spinner("Extracting engineering frameworks to local hard drive..."):
+                with st.spinner("Extracting engineering frameworks to server database..."):
                     for f in uploaded_docs:
+                        # --- BULLETPROOF TEXT PARSER TO FIX REDACTED INVALID ARGUMENT ERROR ---
                         if f.name.endswith(".txt"):
                             raw_text = f.read().decode("utf-8")
-                            # Cut the raw text file into clear paragraphs
-                            paragraphs = raw_text.split("\n\n")
-                            for p in paragraphs:
-                                if p.strip():
-                                    chunks.append(f"[Document Segment: {f.name}]\n{p.strip()}")
+                            lines = raw_text.split("\n")
+                            for line in lines:
+                                cleaned_line = line.strip()
+                                # Only accept lines with real troubleshooting value, skip blanks
+                                if cleaned_line and len(cleaned_line) > 3:
+                                    chunks.append(f"[M1 Blueprint Data Line]\n{cleaned_line}")
+                        
                         elif f.name.endswith(".pdf"):
                             reader = PyPDF2.PdfReader(f)
                             for page_num, page in enumerate(reader.pages):
                                 t = page.extract_text()
-                                if t: chunks.append(f"[Manual: {f.name} | Page: {page_num+1}]\n{t}")
+                                if t and t.strip(): 
+                                    chunks.append(f"[Manual: {f.name} | Page: {page_num+1}]\n{t.strip()}")
+                        
                         elif f.name.endswith((".xlsx", ".xls", ".csv")):
                             df = pd.read_csv(f) if f.name.endswith(".csv") else pd.read_excel(f)
                             for idx, row in df.iterrows():
-                                chunks.append(f"[Log: {f.name} | Row: {idx}]\n" + ", ".join([f"{c}: {v}" for c, v in row.items()]))
+                                row_str = ", ".join([f"{c}: {v}" for c, v in row.items() if str(v).strip()])
+                                if row_str.strip():
+                                    chunks.append(f"[Log: {f.name} | Row: {idx}]\n{row_str}")
                     
-                    # Convert texts to mathematical vector coordinates via Gemini
-                    embed_payload = genai.embed_content(model="models/text-embedding-004", content=chunks, task_type="retrieval_document")
-                    embeddings = np.array(embed_payload['embedding']).astype('float32')
-                    
-                    # Store indexed vectors and mappings locally
-                    index = faiss.IndexFlatL2(embeddings.shape[1])
-                    index.add(embeddings)
-                    faiss.write_index(index, INDEX_FILE)
-                    
-                    with open(TEXT_FILE, "wb") as f_out:
-                        pickle.dump(chunks, f_out)
+                    # Double-check that chunks is not completely empty
+                    if not chunks:
+                        st.error("No valid text data found in files! Make sure files are not blank.")
+                    else:
+                        # Convert texts to mathematical vector coordinates via Gemini
+                        embed_payload = genai.embed_content(model="models/text-embedding-004", content=chunks, task_type="retrieval_document")
+                        embeddings = np.array(embed_payload['embedding']).astype('float32')
                         
-                st.success("Knowledge library locked to hard drive successfully!")
-                st.rerun()
+                        # Store indexed vectors and mappings safely
+                        index = faiss.IndexFlatL2(embeddings.shape[1])
+                        index.add(embeddings)
+                        faiss.write_index(index, INDEX_FILE)
+                        
+                        with open(TEXT_FILE, "wb") as f_out:
+                            pickle.dump(chunks, f_out)
+                            
+                        st.success("Knowledge library built and locked in!")
+                        st.rerun()
 
 # --- MAIN FLOOR INTERFACE: RUNTIME CONTROL RADAR ---
 st.markdown("<h3 style='color:#ffffff; margin-top:0;'>🔧 Live Field Diagnostic Configuration</h3>", unsafe_allow_html=True)
@@ -135,7 +147,7 @@ if "query_cache" not in st.session_state:
 
 if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
     if not (os.path.exists(INDEX_FILE) and os.path.exists(TEXT_FILE)):
-        st.error("Your local knowledge vault is empty! Drop your files in the sidebar and process them first.")
+        st.error("Your knowledge vault is empty! Drop your files in the sidebar and process them first.")
     else:
         with st.spinner("Scanning internal blueprints and human feedback loops..."):
             # Load private documents 
@@ -143,7 +155,7 @@ if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
             with open(TEXT_FILE, "rb") as f_in:
                 all_chunks = pickle.load(f_in)
             
-            # Read star logs from local drive
+            # Read star logs from drive
             repair_history = ""
             if os.path.exists(FEEDBACK_FILE):
                 ledger_df = pd.read_csv(FEEDBACK_FILE)
@@ -202,7 +214,7 @@ if st.session_state.solution_cache:
     if rating is not None:
         actual_stars = rating + 1
         
-        # Append rating straight down to your local hard drive file
+        # Append rating straight down to file
         feedback_entry = pd.DataFrame([{
             "Symptom": st.session_state.query_cache,
             "AI_Solution": st.session_state.solution_cache.replace("\n", " "),
