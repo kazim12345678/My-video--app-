@@ -102,7 +102,6 @@ with st.sidebar:
                     if not full_combined_text.strip():
                         st.error("No valid text found inside your files!")
                     else:
-                        # Save the raw text straight into the server file system (No vector embedding step to crash!)
                         with open(TEXT_FILE, "w", encoding="utf-8") as f_out:
                             f_out.write(full_combined_text)
                             
@@ -130,11 +129,23 @@ if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
     if not os.path.exists(TEXT_FILE):
         st.error("Your knowledge vault is empty! Drop your files in the sidebar and process them first.")
     else:
-        with st.spinner("Analyzing data layout and history logs..."):
-            # Load stored documents
-            with open(TEXT_FILE, "r", encoding="utf-8") as f_in:
-                master_manual_data = f_in.read()
+        with st.spinner("Filtering layout lines and history logs..."):
+            # Load stored documents line by line
+            matched_lines = []
+            keywords = user_query.lower().split()
             
+            with open(TEXT_FILE, "r", encoding="utf-8") as f_in:
+                for line in f_in:
+                    # Smart Keyword Filtering: Find lines in your manual that match what the user typed
+                    if any(word in line.lower() for word in keywords) or "specifications" in line.lower() or "directory" in line.lower():
+                        matched_lines.append(line.strip())
+            
+            # Combine filtered lines (Max 100 lines to ensure it never crashes the API)
+            filtered_manual_context = "\n".join(matched_lines[:100])
+            
+            if not filtered_manual_context.strip():
+                filtered_manual_context = "No specific direct wiring lines found matching search terms. Use general system logic panels."
+
             # Read star logs from drive
             repair_history = ""
             if os.path.exists(FEEDBACK_FILE):
@@ -142,21 +153,21 @@ if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
                 if not ledger_df.empty:
                     repair_history = "\n[PAST TECHNICIAN STAR RATINGS LOG]:\n" + ledger_df.tail(15).to_string()
 
-            # Construct structural instruction prompt for Gemini
+            # Construct structural instruction prompt for Gemini using FILTERED context
             engineered_prompt = (
                 "You are an Elite Industrial Automation Engineer operating the KAZIM Factory Diagnostic System.\n"
                 "Your objective is to solve a machinery problem using the provided manual blueprint context and historical field logs.\n\n"
                 "CRITICAL LOGIC OVERRIDE:\n"
                 "Examine the 'PAST TECHNICIAN STAR RATINGS LOG'. If a solution was awarded high ratings (4-5 stars), emphasize it prominently as the key path forward. "
                 "If an approach was awarded 1 star, it was verified by a live field tech as completely wrong or counterproductive—do NOT suggest it. Change your technical path immediately.\n\n"
-                f"--- PRIVATE BLUEPRINT MANUAL DATA ---\n{master_manual_data}\n\n"
+                f"--- TARGETED BLUEPRINT MANUAL SPECIFICATION LINES ---\n{filtered_manual_context}\n\n"
                 f"--- FACTORY FIELD EXPERIENCE LEDGER ---\n{repair_history}\n\n"
                 f"CURRENT BREAKDOWN SPECIFICATION: Machine {machine_selection} on {line_selection}\n"
                 f"OPERATOR REPORTED SYMPTOM: {user_query}\n\n"
                 "Provide a direct root-cause breakdown explaining the system context, followed immediately by a tactical, prioritized numbers-only field check list."
             )
             
-            # Call Gemini
+            # Call Gemini safely
             model = genai.GenerativeModel('gemini-1.5-flash')
             response = model.generate_content(engineered_prompt)
             
