@@ -131,17 +131,14 @@ if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
     else:
         with st.spinner("Filtering layout lines and history logs..."):
             matched_lines = []
-            # Clean keywords to search strictly
             keywords = [word.lower().strip() for word in user_query.split() if len(word.strip()) > 2]
             
             with open(TEXT_FILE, "r", encoding="utf-8") as f_in:
                 for line in f_in:
                     line_lower = line.lower()
-                    # CRITICAL BULLETPROOF FIX: Check if line matches specific tag or general panel indexes
                     if any(kw in line_lower for kw in keywords) or "specifications" in line_lower or "directory" in line_lower:
                         matched_lines.append(line.strip())
             
-            # HARD LIMIT: Keep maximum 25 matching lines to strictly guarantee the API never overloads
             filtered_manual_context = "\n".join(matched_lines[:25])
             
             if not filtered_manual_context.strip():
@@ -169,8 +166,8 @@ if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
             )
             
             try:
-                # Call Gemini safely
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # FIXED MODEL NAME LINE TO PREVENT 404 SYSTEM ERROR
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 response = model.generate_content(engineered_prompt)
                 st.session_state.solution_cache = response.text
                 st.session_state.query_cache = user_query
