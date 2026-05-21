@@ -3,8 +3,9 @@ import pandas as pd
 import PyPDF2
 import google.generativeai as genai
 import os
+from PIL import Image
 
-# --- ENTERPRISE THEME CONFIGURATION ---
+# --- COPILOT LIGHT THEME CONFIGURATION ---
 st.set_page_config(
     page_title="KAZIM AI Assistant", 
     page_icon="⚙️", 
@@ -12,190 +13,188 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Attractive CSS Injection for Dark Modern Industrial Look
+# Custom CSS for a clean, modern white/light-grey Copilot interface
 st.markdown("""
     <style>
-    .main { background-color: #0f1116; color: #e1e4ea; }
-    .stButton>button {
-        background-color: #1f2430 !important; color: #00ffcc !important;
-        border: 1px solid #00ffcc !important; border-radius: 8px !important;
-        padding: 0.5em 2em !important; font-weight: bold !important;
-        width: 100% !important;
+    .main { background-color: #f9faExternalbc; color: #1f2937; }
+    div[data-testid="stSidebar"] { background-color: #ffffff !important; border-right: 1px solid #e5e7eb; }
+    
+    /* Copilot Header Styling */
+    .copilot-header {
+        padding: 15px 0px;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 25px;
     }
-    .stButton>button:hover { background-color: #00ffcc !important; color: #1f2430 !important; }
-    .stTextInput>div>div>input { background-color: #1a1d24 !important; color: #ffffff !important; border: 1px solid #3a3f50 !important; }
-    .stSelectbox>div>div>div { background-color: #1a1d24 !important; color: #ffffff !important; }
-    div[data-testid="stExpander"] { background-color: #161920 !important; border: 1px solid #282c37 !important; border-radius: 8px !important; }
-    .success-card { background-color: #1c2d27; border-left: 5px solid #00cc88; padding: 15px; border-radius: 6px; margin: 10px 0px; }
-    .header-panel { background: linear-gradient(90deg, #1f2430 0%, #0d1117 100%); padding: 20px; border-radius: 10px; border-bottom: 2px solid #00ffcc; margin-bottom: 25px; }
+    
+    /* Chat Message Bubbles */
+    .user-bubble {
+        background-color: #f3f4f6;
+        padding: 14px 18px;
+        border-radius: 18px 18px 2px 18px;
+        margin: 10px 0px;
+        max-width: 80%;
+        float: right;
+        clear: both;
+        color: #1f2937;
+        font-family: sans-serif;
+    }
+    .ai-bubble {
+        background-color: #edf5ff;
+        border-left: 4px solid #0066cc;
+        padding: 14px 18px;
+        border-radius: 18px 18px 18px 2px;
+        margin: 10px 0px;
+        max-width: 85%;
+        float: left;
+        clear: both;
+        color: #111827;
+        font-family: sans-serif;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    /* System Status Alerts */
+    .status-card {
+        background-color: #ecfdf5;
+        border: 1px solid #10b981;
+        padding: 12px;
+        border-radius: 8px;
+        color: #065f46;
+        font-weight: bold;
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Secure API Key Link
+# Secure API Key Connection
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
     st.error("Missing GEMINI_API_KEY inside your Streamlit Advanced Secrets!")
     st.stop()
 
-# Database Paths on Streamlit Cloud Server
+# Local database file paths
 TEXT_FILE = "kazim_knowledge_text.txt"
-FEEDBACK_FILE = "kazim_repair_ledger.csv"
 
-# Build empty historical rating ledger locally if missing
-if not os.path.exists(FEEDBACK_FILE):
-    pd.DataFrame(columns=["Symptom", "AI_Solution", "Stars"]).to_csv(FEEDBACK_FILE, index=False)
-
-# --- HEADER TITLE BANNER ---
-st.markdown("""
-    <div class="header-panel">
-        <h1 style='margin:0; color:#00ffcc; font-family:sans-serif;'>🛠️ KAZIM AI Assistant Console</h1>
-        <p style='margin:5px 0 0 0; color:#8b949e; font-size:14px;'>Self-Learning Dynamic Diagnostics • Production Floor Assistant</p>
-    </div>
-""", unsafe_allow_html=True)
-
-# --- SIDEBAR CONTROL PANEL: KNOWLEDGE VAULT ---
+# --- SIDEBAR CONTROL PANEL (TRAINING & CONFIGURATION) ---
 with st.sidebar:
-    st.markdown("<h2 style='color:#00ffcc; margin-bottom:0;'>📁 Knowledge Vault</h2>", unsafe_allow_html=True)
-    st.write("Train or update your assistant's permanent memory files.")
+    st.markdown("<h2 style='color: #0066cc; margin-top: 0;'>⚙️ KAZIM Control Center</h2>", unsafe_allow_html=True)
+    st.write("Configure your line matrix and upload reference manuals below.")
     st.write("---")
     
-    is_trained = os.path.exists(TEXT_FILE)
+    # 1. Machine Selection Matrix
+    line_selection = st.selectbox("Select Production Line:", [f"Line {i}" for i in range(1, 21)])
+    machine_selection = st.selectbox("Select Machine Unit:", ["M1 Filler", "Capper Unit", "Labeling Network", "Palletizer Assembly"])
     
+    st.write("---")
+    st.markdown("### 📁 Training Knowledge Vault")
+    
+    is_trained = os.path.exists(TEXT_FILE)
     if is_trained:
-        st.markdown('<div class="success-card"><b style="color:#00cc88;">🟢 SYSTEM ONLINE</b><br><span style="color:#a3b3a7; font-size:12px;">Local Knowledge Loaded</span></div>', unsafe_allow_html=True)
-        force_rebuild = st.checkbox("🔄 Sync/Upload New Manuals?")
+        st.markdown('<div class="status-card">🟢 DATABASE ONLINE<br><span style="font-weight:normal; font-size:11px;">Manual data loaded into memory.</span></div>', unsafe_allow_html=True)
+        force_rebuild = st.checkbox("🔄 Upload/Update Reference Materials?")
         if force_rebuild:
             is_trained = False
-            
+
     if not is_trained:
-        st.markdown("<b style='color:#ff5555;'>🔴 DATABASE STATUS: EMPTY</b>", unsafe_allow_html=True)
         uploaded_docs = st.file_uploader(
-            "Drop the M1 Cheat Sheet Text or Machine Manual PDFs here:", 
+            "Upload Cheat Sheets, Electrical TXT, or Machine Manual PDFs:", 
             type=["txt", "pdf", "xlsx", "csv"], 
             accept_multiple_files=True
         )
         
-        if st.button("🚀 Process & Lock Data Locally"):
+        if st.button("🚀 Process & Lock Data"):
             if uploaded_docs:
                 full_combined_text = ""
-                with st.spinner("Processing technical text parameters..."):
+                with st.spinner("Compiling technical blueprints..."):
                     for f in uploaded_docs:
                         if f.name.endswith(".txt"):
-                            raw_text = f.read().decode("utf-8")
-                            full_combined_text += f"\n[SOURCE FILE: {f.name}]\n" + raw_text
-                        
+                            full_combined_text += f"\n[FILE: {f.name}]\n" + f.read().decode("utf-8")
                         elif f.name.endswith(".pdf"):
                             reader = PyPDF2.PdfReader(f)
-                            for page_num, page in enumerate(reader.pages):
+                            for p_idx, page in enumerate(reader.pages):
                                 t = page.extract_text()
-                                if t: 
-                                    full_combined_text += f"\n[Manual: {f.name} | Page: {page_num+1}]\n{t}\n"
-                        
-                        elif f.name.endswith((".xlsx", ".xls", ".csv")):
-                            df = pd.read_csv(f) if f.name.endswith(".csv") else pd.read_excel(f)
-                            for idx, row in df.iterrows():
-                                row_str = ", ".join([f"{c}: {v}" for c, v in row.items() if str(v).strip()])
-                                if row_str.strip():
-                                    full_combined_text += f"\n[Log: {f.name} | Row: {idx}] {row_str}\n"
+                                if t: full_combined_text += f"\n[Manual: {f.name} | Page: {p_idx+1}]\n{t}\n"
                     
-                    if not full_combined_text.strip():
-                        st.error("No valid text found inside your files!")
-                    else:
+                    if full_combined_text.strip():
                         with open(TEXT_FILE, "w", encoding="utf-8") as f_out:
                             f_out.write(full_combined_text)
-                            
-                        st.success("Knowledge library built and locked in successfully!")
+                        st.success("Knowledge vault updated!")
                         st.rerun()
 
-# --- MAIN FLOOR INTERFACE: RUNTIME CONTROL RADAR ---
-st.markdown("<h3 style='color:#ffffff; margin-top:0;'>🔧 Live Field Diagnostic Configuration</h3>", unsafe_allow_html=True)
+# --- MAIN CHAT INTERFACE PANEL ---
+st.markdown(f"""
+    <div class="copilot-header">
+        <h1 style='margin:0; color:#111827; font-size: 26px;'>🤖 KAZIM Chat Assistant</h1>
+        <p style='margin:5px 0 0 0; color:#6b7280; font-size:14px;'>Active Tracking on: <b>{line_selection} — {machine_selection}</b></p>
+    </div>
+""", unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns([1, 1, 2])
-with col1:
-    line_selection = st.selectbox("Production Line Matrix:", [f"Line {i}" for i in range(1, 21)])
-with col2:
-    machine_selection = st.selectbox("Machine Identifier Classification:", ["M1 Filler", "Capper Unit", "Labeling Network", "Palletizer Assembly"])
-with col3:
-    user_query = st.text_input("Enter component error tag, fault code, or symptom profile:", placeholder="e.g., Pilz module red fault light / wire 84C2 lacks power")
+# Initialize Chat History Memory arrays so it works like Copilot
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-# Cache states across asynchronous event loops for ratings
-if "solution_cache" not in st.session_state:
-    st.session_state.solution_cache = None
-if "query_cache" not in st.session_state:
-    st.session_state.query_cache = None
-
-if st.button("⚡ Run KAZIM Diagnostic Engine") and user_query:
-    if not os.path.exists(TEXT_FILE):
-        st.error("Your knowledge vault is empty! Drop your files in the sidebar and process them first.")
+# Display all previous messages on the screen automatically
+for message in st.session_state.messages:
+    if message["role"] == "user":
+        st.markdown(f'<div class="user-bubble"><b>You:</b><br>{message["content"]}</div>', unsafe_allow_html=True)
     else:
-        with st.spinner("Filtering layout lines and history logs..."):
-            matched_lines = []
-            keywords = [word.lower().strip() for word in user_query.split() if len(word.strip()) > 2]
-            
-            with open(TEXT_FILE, "r", encoding="utf-8") as f_in:
-                for line in f_in:
-                    line_lower = line.lower()
-                    if any(kw in line_lower for kw in keywords) or "specifications" in line_lower or "directory" in line_lower:
-                        matched_lines.append(line.strip())
-            
+        st.markdown(f'<div class="ai-bubble"><b>KAZIM AI:</b><br>{message["content"]}</div>', unsafe_allow_html=True)
+
+st.markdown("<div style='clear: both;'></div>", unsafe_allow_html=True)
+
+# --- CHAT INPUT BAR & PICTURE ATTACHMENT BOX ---
+st.write("---")
+st.write("💬 Ask anything from KAZIM:")
+
+# Image upload widget directly in the chat field area
+attached_image = st.file_uploader("📸 Optional: Attach a picture of a fault code, screen error, or component:", type=["jpg", "jpeg", "png"])
+
+# The continuous chat text box entry input
+user_query = st.chat_input("Type your hardware code or component symptom here...")
+
+if user_query:
+    # 1. Print the user's question bubble instantly onto the screen
+    st.markdown(f'<div class="user-bubble"><b>You:</b><br>{user_query}</div>', unsafe_allow_html=True)
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    
+    # 2. Filter local text manuals for matching text snippets
+    filtered_manual_context = "General operational engineering parameters."
+    if os.path.exists(TEXT_FILE):
+        matched_lines = []
+        keywords = [w.lower().strip() for w in user_query.split() if len(w.strip()) > 2]
+        with open(TEXT_FILE, "r", encoding="utf-8") as f_in:
+            for line in f_in:
+                if any(kw in line.lower() for kw in keywords) or "specification" in line.lower():
+                    matched_lines.append(line.strip())
+        if matched_lines:
             filtered_manual_context = "\n".join(matched_lines[:25])
+
+    # 3. Handle prompt building whether it is a text-only prompt or an image analysis prompt
+    prompt_instructions = (
+        f"You are an Elite Industrial Automation Engineer analyzing a fault on {machine_selection} at {line_selection}.\n"
+        f"Use these lines from the manual for technical reference:\n{filtered_manual_context}\n\n"
+        f"Operator Question: {user_query}\n\n"
+        "Provide a direct root-cause breakdown followed by a prioritized, numbered checklist for the technician."
+    )
+    
+    with st.spinner("Analyzing parameters..."):
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
-            if not filtered_manual_context.strip():
-                filtered_manual_context = "Machine Layout Focus: Reference general panel indexes and IEC classification rules."
-
-            # Read star logs from drive
-            repair_history = ""
-            if os.path.exists(FEEDBACK_FILE):
-                ledger_df = pd.read_csv(FEEDBACK_FILE)
-                if not ledger_df.empty:
-                    repair_history = "\n[PAST TECHNICIAN STAR RATINGS LOG]:\n" + ledger_df.tail(10).to_string()
-
-            # Construct structural instruction prompt for Gemini using highly compact data
-            engineered_prompt = (
-                "You are an Elite Industrial Automation Engineer operating the KAZIM Factory Diagnostic System.\n"
-                "Your objective is to solve a machinery problem using the provided manual blueprint context and historical field logs.\n\n"
-                "CRITICAL LOGIC OVERRIDE:\n"
-                "Examine the 'PAST TECHNICIAN STAR RATINGS LOG'. If a solution was awarded high ratings (4-5 stars), emphasize it prominently as the key path forward. "
-                "If an approach was awarded 1 star, do NOT repeat it.\n\n"
-                f"--- TARGETED BLUEPRINT MANUAL LINES ---\n{filtered_manual_context}\n\n"
-                f"--- FACTORY FIELD EXPERIENCE LEDGER ---\n{repair_history}\n\n"
-                f"CURRENT BREAKDOWN SPECIFICATION: Machine {machine_selection} on {line_selection}\n"
-                f"OPERATOR REPORTED SYMPTOM: {user_query}\n\n"
-                "Provide a direct root-cause breakdown explaining the system context, followed immediately by a tactical, prioritized numbers-only field check list."
-            )
+            if attached_image:
+                # Open and process the uploaded photo using PIL library
+                img_data = Image.open(attached_image)
+                # Send both the photo and the engineering instructions to Gemini
+                response = model.generate_content([prompt_instructions, img_data])
+            else:
+                # Text-only call
+                response = model.generate_content(prompt_instructions)
             
-            try:
-                # FIXED MODEL NAME LINE TO PREVENT 404 SYSTEM ERROR
-                model = genai.GenerativeModel('gemini-2.5-flash')
-                response = model.generate_content(engineered_prompt)
-                st.session_state.solution_cache = response.text
-                st.session_state.query_cache = user_query
-            except Exception as e:
-                st.error(f"API Error context overload protection active. Try searching for a specific code like 'Pilz' or '84C2'. Details: {str(e)}")
-
-# Present solutions and activate human feedback recording loops
-if st.session_state.solution_cache:
-    st.markdown("<h3 style='color:#00ffcc; margin-top:20px;'>🤖 Actionable Field Repair Briefing:</h3>", unsafe_allow_html=True)
-    st.info(st.session_state.solution_cache)
-    
-    st.write("---")
-    st.markdown("<h4 style='color:#ffffff;'>📝 Rate this solution to train KAZIM Memory Log:</h4>", unsafe_allow_html=True)
-    
-    # Render Star Feedback widget
-    rating = st.feedback("stars", key="kazim_feedback_stars")
-    
-    if rating is not None:
-        actual_stars = rating + 1
-        
-        # Append rating straight down to file
-        feedback_entry = pd.DataFrame([{
-            "Symptom": st.session_state.query_cache,
-            "AI_Solution": st.session_state.solution_cache.replace("\n", " "),
-            "Stars": actual_stars
-        }])
-        feedback_entry.to_csv(FEEDBACK_FILE, mode='a', header=False, index=False)
-        
-        st.success(f"Log appended! System memory grew more mature with a {actual_stars}-star resolution record.")
-        st.session_state.solution_cache = None
-        st.session_state.query_cache = None
+            # 4. Print the AI response bubble on the screen and save to chat history
+            st.markdown(f'<div class="ai-bubble"><b>KAZIM AI:</b><br>{response.text}</div>', unsafe_allow_html=True)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            st.rerun()
+            
+        except Exception as e:
+            st.error(f"System communication trace anomaly: {str(e)}")
