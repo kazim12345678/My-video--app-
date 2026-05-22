@@ -16,7 +16,7 @@ st.set_page_config(
 # Custom CSS for a clean, modern white/light-grey Copilot interface
 st.markdown("""
     <style>
-    .main { background-color: #f9faExternalbc; color: #1f2937; }
+    .main { background-color: #f9fabc; color: #1f2937; }
     div[data-testid="stSidebar"] { background-color: #ffffff !important; border-right: 1px solid #e5e7eb; }
     
     /* Copilot Header Styling */
@@ -108,19 +108,42 @@ with st.sidebar:
                 full_combined_text = ""
                 with st.spinner("Compiling technical blueprints..."):
                     for f in uploaded_docs:
-                        if f.name.endswith(".txt"):
-                            full_combined_text += f"\n[FILE: {f.name}]\n" + f.read().decode("utf-8")
-                        elif f.name.endswith(".pdf"):
-                            reader = PyPDF2.PdfReader(f)
-                            for p_idx, page in enumerate(reader.pages):
-                                t = page.extract_text()
-                                if t: full_combined_text += f"\n[Manual: {f.name} | Page: {p_idx+1}]\n{t}\n"
+                        fname_lower = f.name.lower()
+                        
+                        # Flexible Reading for TXT
+                        if fname_lower.endswith(".txt"):
+                            file_content = f.read().decode("utf-8", errors="ignore")
+                            full_combined_text += f"\n[FILE NAME: {f.name}]\n{file_content}\n"
+                        
+                        # Flexible Reading for PDF
+                        elif fname_lower.endswith(".pdf"):
+                            try:
+                                reader = PyPDF2.PdfReader(f)
+                                for p_idx, page in enumerate(reader.pages):
+                                    t = page.extract_text()
+                                    if t: 
+                                        full_combined_text += f"\n[Manual: {f.name} | Page: {p_idx+1}]\n{t}\n"
+                            except Exception as pdf_err:
+                                st.warning(f"Could not read PDF {f.name}: {str(pdf_err)}")
+                        
+                        # Flexible Reading for Excel/CSV
+                        elif fname_lower.endswith(".csv") or fname_lower.endswith(".xlsx"):
+                            try:
+                                df = pd.read_csv(f) if fname_lower.endswith(".csv") else pd.read_excel(f)
+                                csv_text = df.to_string()
+                                full_combined_text += f"\n[DATA SHEET: {f.name}]\n{csv_text}\n"
+                            except Exception as sheet_err:
+                                st.warning(f"Could not read spreadsheet {f.name}: {str(sheet_err)}")
                     
                     if full_combined_text.strip():
                         with open(TEXT_FILE, "w", encoding="utf-8") as f_out:
                             f_out.write(full_combined_text)
-                        st.success("Knowledge vault updated!")
+                        st.success("Knowledge vault updated! Locking system...")
                         st.rerun()
+                    else:
+                        st.error("No readable text found inside the uploaded files!")
+            else:
+                st.error("Meharbani karke pehle koi file select ya drop karein!")
 
 # --- MAIN CHAT INTERFACE PANEL ---
 st.markdown(f"""
@@ -130,11 +153,11 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Initialize Chat History Memory arrays so it works like Copilot
+# Initialize Chat History Memory arrays
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display all previous messages on the screen automatically
+# Display previous messages
 for message in st.session_state.messages:
     if message["role"] == "user":
         st.markdown(f'<div class="user-bubble"><b>You:</b><br>{message["content"]}</div>', unsafe_allow_html=True)
@@ -147,18 +170,13 @@ st.markdown("<div style='clear: both;'></div>", unsafe_allow_html=True)
 st.write("---")
 st.write("💬 Ask anything from KAZIM:")
 
-# Image upload widget directly in the chat field area
 attached_image = st.file_uploader("📸 Optional: Attach a picture of a fault code, screen error, or component:", type=["jpg", "jpeg", "png"])
-
-# The continuous chat text box entry input
 user_query = st.chat_input("Type your hardware code or component symptom here...")
 
 if user_query:
-    # 1. Print the user's question bubble instantly onto the screen
     st.markdown(f'<div class="user-bubble"><b>You:</b><br>{user_query}</div>', unsafe_allow_html=True)
     st.session_state.messages.append({"role": "user", "content": user_query})
     
-    # 2. Filter local text manuals for matching text snippets
     filtered_manual_context = "General operational engineering parameters."
     if os.path.exists(TEXT_FILE):
         matched_lines = []
@@ -170,7 +188,6 @@ if user_query:
         if matched_lines:
             filtered_manual_context = "\n".join(matched_lines[:25])
 
-    # 3. Handle prompt building whether it is a text-only prompt or an image analysis prompt
     prompt_instructions = (
         f"You are an Elite Industrial Automation Engineer analyzing a fault on {machine_selection} at {line_selection}.\n"
         f"Use these lines from the manual for technical reference:\n{filtered_manual_context}\n\n"
@@ -181,17 +198,12 @@ if user_query:
     with st.spinner("Analyzing parameters..."):
         try:
             model = genai.GenerativeModel('gemini-2.5-flash')
-            
             if attached_image:
-                # Open and process the uploaded photo using PIL library
                 img_data = Image.open(attached_image)
-                # Send both the photo and the engineering instructions to Gemini
                 response = model.generate_content([prompt_instructions, img_data])
             else:
-                # Text-only call
                 response = model.generate_content(prompt_instructions)
             
-            # 4. Print the AI response bubble on the screen and save to chat history
             st.markdown(f'<div class="ai-bubble"><b>KAZIM AI:</b><br>{response.text}</div>', unsafe_allow_html=True)
             st.session_state.messages.append({"role": "assistant", "content": response.text})
             st.rerun()
