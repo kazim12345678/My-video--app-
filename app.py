@@ -84,7 +84,7 @@ with st.sidebar:
     
     # 1. Machine Selection Matrix
     line_selection = st.selectbox("Select Production Line:", [f"Line {i}" for i in range(1, 21)])
-    machine_selection = st.selectbox("Select Machine Unit:", ["M1 Filler", "Capper Unit", "Labeling Network", "Palletizer Assembly"])
+    machine_selection = st.selectbox("Select Machine Unit:", ["M2 Filler Unit", "M1 Filler", "Capper Unit", "Labeling Network"])
     
     st.write("---")
     st.markdown("### 📁 Training Knowledge Vault")
@@ -110,12 +110,11 @@ with st.sidebar:
                     for f in uploaded_docs:
                         fname_lower = f.name.lower()
                         
-                        # Flexible Reading for TXT
                         if fname_lower.endswith(".txt"):
                             file_content = f.read().decode("utf-8", errors="ignore")
+                            # File ka naam header mein save ho raha hai taake search strong ho
                             full_combined_text += f"\n[FILE NAME: {f.name}]\n{file_content}\n"
                         
-                        # Flexible Reading for PDF
                         elif fname_lower.endswith(".pdf"):
                             try:
                                 reader = PyPDF2.PdfReader(f)
@@ -125,23 +124,12 @@ with st.sidebar:
                                         full_combined_text += f"\n[Manual: {f.name} | Page: {p_idx+1}]\n{t}\n"
                             except Exception as pdf_err:
                                 st.warning(f"Could not read PDF {f.name}: {str(pdf_err)}")
-                        
-                        # Flexible Reading for Excel/CSV
-                        elif fname_lower.endswith(".csv") or fname_lower.endswith(".xlsx"):
-                            try:
-                                df = pd.read_csv(f) if fname_lower.endswith(".csv") else pd.read_excel(f)
-                                csv_text = df.to_string()
-                                full_combined_text += f"\n[DATA SHEET: {f.name}]\n{csv_text}\n"
-                            except Exception as sheet_err:
-                                st.warning(f"Could not read spreadsheet {f.name}: {str(sheet_err)}")
                     
                     if full_combined_text.strip():
                         with open(TEXT_FILE, "w", encoding="utf-8") as f_out:
                             f_out.write(full_combined_text)
-                        st.success("Knowledge vault updated! Locking system...")
+                        st.success("Knowledge vault locked successfully!")
                         st.rerun()
-                    else:
-                        st.error("No readable text found inside the uploaded files!")
             else:
                 st.error("Meharbani karke pehle koi file select ya drop karein!")
 
@@ -153,11 +141,9 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Initialize Chat History Memory arrays
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display previous messages
 for message in st.session_state.messages:
     if message["role"] == "user":
         st.markdown(f'<div class="user-bubble"><b>You:</b><br>{message["content"]}</div>', unsafe_allow_html=True)
@@ -166,36 +152,50 @@ for message in st.session_state.messages:
 
 st.markdown("<div style='clear: both;'></div>", unsafe_allow_html=True)
 
-# --- CHAT INPUT BAR & PICTURE ATTACHMENT BOX ---
 st.write("---")
 st.write("💬 Ask anything from KAZIM:")
 
-attached_image = st.file_uploader("📸 Optional: Attach a picture of a fault code, screen error, or component:", type=["jpg", "jpeg", "png"])
+attached_image = st.file_uploader("📸 Optional: Attach a picture:", type=["jpg", "jpeg", "png"])
 user_query = st.chat_input("Type your hardware code or component symptom here...")
 
 if user_query:
     st.markdown(f'<div class="user-bubble"><b>You:</b><br>{user_query}</div>', unsafe_allow_html=True)
     st.session_state.messages.append({"role": "user", "content": user_query})
     
-    filtered_manual_context = "General operational engineering parameters."
+    # ADVANCED CONTEXT FILTER: Pure file scan matching mechanism
+    filtered_manual_context = ""
     if os.path.exists(TEXT_FILE):
-        matched_lines = []
-        keywords = [w.lower().strip() for w in user_query.split() if len(w.strip()) > 2]
+        matched_chunks = []
+        # Chote keywords (jaise M2, CIP) ko filter se delete nahi karega
+        keywords = [w.lower().strip() for w in user_query.split() if len(w.strip()) >= 2]
+        
         with open(TEXT_FILE, "r", encoding="utf-8") as f_in:
-            for line in f_in:
-                if any(kw in line.lower() for kw in keywords) or "specification" in line.lower():
-                    matched_lines.append(line.strip())
-        if matched_lines:
-            filtered_manual_context = "\n".join(matched_lines[:25])
+            file_lines = f_in.readlines()
+            
+            # Smart logic: pura block scan karega agar M2 lafz milega
+            for idx, line in enumerate(file_lines):
+                if any(kw in line.lower() for kw in keywords):
+                    # Us line ke aage peeche ki 5 lines bhi utha lega behtar context ke liye
+                    start_idx = max(0, idx - 3)
+                    end_idx = min(len(file_lines), idx + 7)
+                    chunk_text = "".join(file_lines[start_idx:end_idx])
+                    matched_chunks.append(chunk_text.strip())
+        
+        if matched_chunks:
+            filtered_manual_context = "\n---\n".join(matched_chunks[:15])
+
+    if not filtered_manual_context:
+        filtered_manual_context = "General standard industrial automation specification database."
 
     prompt_instructions = (
-        f"You are an Elite Industrial Automation Engineer analyzing a fault on {machine_selection} at {line_selection}.\n"
-        f"Use these lines from the manual for technical reference:\n{filtered_manual_context}\n\n"
+        f"You are an Elite Industrial Automation Engineer analyzing a query on {machine_selection} at {line_selection}.\n"
+        f"Strictly focus on the user's specific model keyword (e.g., M2 or M1) asked in the prompt.\n"
+        f"Here is the Technical Reference Data extracted from your verified factory manuals:\n{filtered_manual_context}\n\n"
         f"Operator Question: {user_query}\n\n"
-        "Provide a direct root-cause breakdown followed by a prioritized, numbered checklist for the technician."
+        "Provide a technical root-cause explanation or system operational breakdown. Use clear numbered bullet points for maintenance actions."
     )
     
-    with st.spinner("Analyzing parameters..."):
+    with st.spinner("Scanning Technical Manual Database..."):
         try:
             model = genai.GenerativeModel('gemini-2.5-flash')
             if attached_image:
@@ -209,4 +209,4 @@ if user_query:
             st.rerun()
             
         except Exception as e:
-            st.error(f"System communication trace anomaly: {str(e)}")
+            st.error(f"System Trace Error: {str(e)}")
