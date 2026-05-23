@@ -1,21 +1,68 @@
 import streamlit as st
 from groq import Groq
+import pandas as pd
+import PyPDF2
+import io
+from datetime import datetime
 
 # =========================================================
 # PAGE CONFIG
 # =========================================================
 
 st.set_page_config(
-    page_title="KAZIM AI",
+    page_title="KAZIM AI PRO",
     layout="wide"
 )
+
+# =========================================================
+# DARK UI
+# =========================================================
+
+st.markdown("""
+<style>
+.stApp {
+    background-color: #0E1117;
+    color: white;
+}
+
+section[data-testid="stSidebar"] {
+    background-color: #111827;
+}
+
+h1, h2, h3 {
+    color: #00FFAA;
+}
+
+.stButton>button {
+    background-color: #00AA88;
+    color: white;
+    border-radius: 10px;
+}
+
+.stTextInput>div>div>input {
+    background-color: #1F2937;
+    color: white;
+}
+
+.stTextArea textarea {
+    background-color: #1F2937;
+    color: white;
+}
+
+div[data-testid="stChatMessage"] {
+    background-color: #1F2937;
+    border-radius: 10px;
+    padding: 10px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =========================================================
 # SESSION STATES
 # =========================================================
 
-if "file_content" not in st.session_state:
-    st.session_state.file_content = ""
+if "knowledge_base" not in st.session_state:
+    st.session_state.knowledge_base = {}
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -27,7 +74,7 @@ if "admin_unlocked" not in st.session_state:
 # SIDEBAR
 # =========================================================
 
-st.sidebar.title("KAZIM AI")
+st.sidebar.title("KAZIM AI PRO")
 
 line = st.sidebar.selectbox(
     "Select Line",
@@ -39,11 +86,11 @@ machine = st.sidebar.selectbox(
     [f"M{i}" for i in range(1, 21)]
 )
 
-st.sidebar.markdown("---")
+# =========================================================
+# ADMIN LOGIN
+# =========================================================
 
-# =========================================================
-# ADMIN PASSWORD
-# =========================================================
+st.sidebar.markdown("---")
 
 password = st.sidebar.text_input(
     "Admin Password",
@@ -58,50 +105,121 @@ if st.sidebar.button("Unlock Admin"):
         st.sidebar.error("Wrong Password")
 
 # =========================================================
-# MAIN TITLE
+# TITLE
 # =========================================================
 
-st.title("KAZIM AI")
-st.subheader("Industrial Diagnostic Assistant")
+st.title("KAZIM AI PRO")
+st.subheader("Industrial AI Diagnostic Platform")
 
 # =========================================================
-# FILE UPLOADER
+# FILE UPLOAD
 # =========================================================
 
-uploaded_file = st.file_uploader(
-    "Upload M18 Data File",
-    type=["txt"]
+st.markdown("## Upload Industrial Data")
+
+uploaded_files = st.file_uploader(
+    "Upload TXT / PDF / Excel Files",
+    type=["txt", "pdf", "xlsx", "csv"],
+    accept_multiple_files=True
 )
 
-if uploaded_file is not None:
+# =========================================================
+# PROCESS FILES
+# =========================================================
 
-    file_text = uploaded_file.read().decode("utf-8")
+if uploaded_files:
 
-    if st.session_state.admin_unlocked:
+    for uploaded_file in uploaded_files:
 
-        action = st.radio(
-            "Select File Action",
-            ["Override Existing Data", "Add New Data"]
-        )
+        file_name = uploaded_file.name
 
-        if action == "Override Existing Data":
-            st.session_state.file_content = file_text
-            st.success("Data Overridden Successfully")
+        file_content = ""
 
-        elif action == "Add New Data":
-            st.session_state.file_content += "\n\n" + file_text
-            st.success("Data Added Successfully")
+        # TXT
+        if file_name.endswith(".txt"):
+            file_content = uploaded_file.read().decode("utf-8")
 
-    else:
+        # PDF
+        elif file_name.endswith(".pdf"):
 
-        if st.session_state.file_content == "":
-            st.session_state.file_content = file_text
-            st.success("Initial Data Loaded")
-        else:
-            st.warning("Admin Unlock Required To Modify Existing Data")
+            pdf_reader = PyPDF2.PdfReader(uploaded_file)
+
+            for page in pdf_reader.pages:
+                file_content += page.extract_text()
+
+        # CSV
+        elif file_name.endswith(".csv"):
+
+            df = pd.read_csv(uploaded_file)
+
+            file_content = df.to_string()
+
+        # EXCEL
+        elif file_name.endswith(".xlsx"):
+
+            excel_data = pd.ExcelFile(uploaded_file)
+
+            for sheet in excel_data.sheet_names:
+
+                df = pd.read_excel(uploaded_file, sheet_name=sheet)
+
+                file_content += f"\n\n--- SHEET: {sheet} ---\n\n"
+                file_content += df.to_string()
+
+        # SAVE DATA
+        st.session_state.knowledge_base[file_name] = file_content
+
+    st.success("Files Uploaded Successfully")
 
 # =========================================================
-# CURRENT SELECTION
+# DELETE FILE OPTION
+# =========================================================
+
+st.markdown("## Uploaded Files")
+
+if len(st.session_state.knowledge_base) > 0:
+
+    for file in list(st.session_state.knowledge_base.keys()):
+
+        col1, col2 = st.columns([8, 1])
+
+        with col1:
+            st.write(f"📁 {file}")
+
+        with col2:
+
+            if st.button("❌", key=file):
+
+                del st.session_state.knowledge_base[file]
+
+                st.rerun()
+
+else:
+    st.info("No files uploaded.")
+
+# =========================================================
+# KPI DASHBOARD
+# =========================================================
+
+st.markdown("## KPI Dashboard")
+
+total_files = len(st.session_state.knowledge_base)
+
+total_chars = sum(
+    len(content)
+    for content in st.session_state.knowledge_base.values()
+)
+
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Uploaded Files", total_files)
+
+col2.metric("Data Size", f"{round(total_chars/1000,2)} K")
+
+col3.metric("Chat History", len(st.session_state.messages))
+
+# =========================================================
+# SHOW CURRENT SELECTION
 # =========================================================
 
 st.markdown("## Current Selection")
@@ -109,6 +227,7 @@ st.markdown("## Current Selection")
 st.markdown(f"""
 - **Line:** {line}
 - **Machine:** {machine}
+- **Time:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 """)
 
 # =========================================================
@@ -116,7 +235,7 @@ st.markdown(f"""
 # =========================================================
 
 if "GROQ_API_KEY" not in st.secrets:
-    st.error("Groq API Key Not Found In Streamlit Secrets")
+    st.error("Groq API Key Missing")
     st.stop()
 
 # =========================================================
@@ -128,24 +247,29 @@ client = Groq(
 )
 
 # =========================================================
-# DISPLAY CHAT HISTORY
+# CHAT HISTORY
 # =========================================================
 
 for msg in st.session_state.messages:
+
     with st.chat_message(msg["role"]):
+
         st.markdown(msg["content"])
 
 # =========================================================
-# USER INPUT
+# CHAT INPUT
 # =========================================================
 
 user_question = st.chat_input(
     "Ask Technical Question..."
 )
 
+# =========================================================
+# AI LOGIC
+# =========================================================
+
 if user_question:
 
-    # USER MESSAGE
     st.session_state.messages.append({
         "role": "user",
         "content": user_question
@@ -155,13 +279,30 @@ if user_question:
         st.markdown(user_question)
 
     # =====================================================
+    # MERGE KNOWLEDGE BASE
+    # =====================================================
+
+    combined_data = ""
+
+    for file_name, content in st.session_state.knowledge_base.items():
+
+        combined_data += f"""
+
+FILE: {file_name}
+
+{content}
+
+====================================================
+"""
+
+    # =====================================================
     # SYSTEM PROMPT
     # =====================================================
 
     system_prompt = f"""
-You are KAZIM AI.
+You are KAZIM AI PRO.
 
-You are a senior industrial maintenance engineer.
+You are a senior beverage industry maintenance engineer.
 
 Current Line:
 {line}
@@ -169,30 +310,31 @@ Current Line:
 Current Machine:
 {machine}
 
-Use ONLY uploaded file data.
-
-Focus only on:
-- Module 5Y
-- Module 19
-- Module 25
-- Module 29
-- Module 30
-- Module 32
-- Module 87
-- Module 88
+Focus on:
+- Root Cause Analysis
+- Corrective Actions
+- Preventive Actions
+- MTTR
+- MTBF
+- OPL
+- KPI Analysis
+- Breakdown Analysis
+- Technician Analysis
+- Fault Code Analysis
+- Machine History
+- Beverage Industry Troubleshooting
 
 Rules:
-- Give engineering answers only.
-- Mention root cause.
-- Mention corrective action.
-- Mention preventive action.
+- Use uploaded data only.
+- Give industrial engineering answers.
 - Give practical troubleshooting.
 - No generic AI answers.
-- If data not found say:
-"No related technical data found in uploaded file."
+- Mention important machine tags if found.
+- If no data found say:
+"No related technical data found."
 
-Uploaded Technical Data:
-{st.session_state.file_content}
+Uploaded Data:
+{combined_data}
 """
 
     # =====================================================
@@ -216,19 +358,49 @@ Uploaded Technical Data:
                     }
                 ],
                 temperature=0.3,
-                max_tokens=1000
+                max_tokens=2000
             )
 
             ai_reply = response.choices[0].message.content
 
         except Exception as e:
+
             ai_reply = f"Error: {str(e)}"
 
         st.markdown(ai_reply)
 
-    # SAVE AI RESPONSE
+    # =====================================================
+    # SAVE RESPONSE
+    # =====================================================
 
     st.session_state.messages.append({
         "role": "assistant",
         "content": ai_reply
     })
+
+# =========================================================
+# EXTRA FEATURES
+# =========================================================
+
+st.markdown("---")
+
+st.markdown("## AI Features Enabled")
+
+st.markdown("""
+✅ TXT Upload  
+✅ PDF Upload  
+✅ Excel Upload  
+✅ CSV Upload  
+✅ Delete Uploaded Files  
+✅ Machine History Memory  
+✅ KPI Dashboard  
+✅ Breakdown Analysis  
+✅ MTTR / MTBF Analysis  
+✅ Fault Code Analysis  
+✅ RCA Generation  
+✅ OPL Suggestions  
+✅ Technician Analysis  
+✅ Dark Industrial UI  
+✅ Multi File Knowledge Base  
+✅ Industrial AI Assistant  
+""")
