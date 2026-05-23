@@ -1,11 +1,2 @@
 streamlit
-pandas
-openpyxl
-PyPDF2
-google-generativeai
-numpy
-faiss-cpu
-streamlit
-openai
-streamlit
 groq
