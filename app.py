@@ -7,15 +7,85 @@ from groq import Groq
 
 st.set_page_config(
     page_title="KAZIM AI",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
+
+# =========================================================
+# CHATGPT STYLE WHITE UI
+# =========================================================
+
+st.markdown("""
+<style>
+
+.stApp {
+    background-color: white;
+}
+
+header {
+    visibility: hidden;
+}
+
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+.block-container {
+    padding-top: 2rem;
+    max-width: 900px;
+}
+
+h1, h2, h3 {
+    color: black;
+}
+
+section[data-testid="stSidebar"] {
+    background-color: #F7F7F8;
+    border-right: 1px solid #E5E5E5;
+}
+
+.stChatMessage {
+    background-color: white;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.stTextInput input {
+    border-radius: 10px;
+}
+
+textarea {
+    border-radius: 12px !important;
+}
+
+div[data-testid="stChatInput"] {
+    background-color: white;
+}
+
+div[data-testid="stChatInput"] textarea {
+    background-color: white !important;
+    color: black !important;
+    border: 1px solid #D1D5DB !important;
+    border-radius: 14px !important;
+}
+
+.stButton>button {
+    border-radius: 10px;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # =========================================================
 # SESSION STATES
 # =========================================================
 
-if "file_content" not in st.session_state:
-    st.session_state.file_content = ""
+if "knowledge_base" not in st.session_state:
+    st.session_state.knowledge_base = {}
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -23,100 +93,206 @@ if "messages" not in st.session_state:
 if "admin_unlocked" not in st.session_state:
     st.session_state.admin_unlocked = False
 
+if "selected_line" not in st.session_state:
+    st.session_state.selected_line = "Line 1"
+
+if "selected_machine" not in st.session_state:
+    st.session_state.selected_machine = "Filler"
+
 # =========================================================
 # SIDEBAR
 # =========================================================
 
-st.sidebar.title("KAZIM AI")
+with st.sidebar:
 
-line = st.sidebar.selectbox(
-    "Select Line",
-    [f"Line {i}" for i in range(1, 21)]
-)
+    st.title("KAZIM AI")
 
-machine = st.sidebar.selectbox(
-    "Select Machine",
-    [f"M{i}" for i in range(1, 21)]
-)
+    st.markdown("---")
 
-st.sidebar.markdown("---")
+    # CLEAR CHAT
 
-# =========================================================
-# ADMIN PASSWORD
-# =========================================================
+    if st.button("🗑 Delete Chat History"):
+        st.session_state.messages = []
+        st.rerun()
 
-password = st.sidebar.text_input(
-    "Admin Password",
-    type="password"
-)
+    st.markdown("---")
 
-if st.sidebar.button("Unlock Admin"):
-    if password == "Kazim@2026":
-        st.session_state.admin_unlocked = True
-        st.sidebar.success("Admin Unlocked")
-    else:
-        st.sidebar.error("Wrong Password")
+    # ADMIN ACCESS
 
-# =========================================================
-# MAIN TITLE
-# =========================================================
+    admin_toggle = st.button("🔐 Admin Access")
 
-st.title("KAZIM AI")
-st.subheader("Industrial Diagnostic Assistant")
+    if admin_toggle:
+        st.session_state.show_admin = True
 
-# =========================================================
-# FILE UPLOADER
-# =========================================================
+    if "show_admin" not in st.session_state:
+        st.session_state.show_admin = False
 
-uploaded_file = st.file_uploader(
-    "Upload M18 Data File",
-    type=["txt"]
-)
+    if st.session_state.show_admin:
 
-if uploaded_file is not None:
+        password = st.text_input(
+            "Enter Password",
+            type="password"
+        )
 
-    file_text = uploaded_file.read().decode("utf-8")
+        if st.button("Login"):
+
+            if password == "Kazim@2026":
+
+                st.session_state.admin_unlocked = True
+
+                st.success("Admin Mode Enabled")
+
+            else:
+                st.error("Wrong Password")
+
+    # =====================================================
+    # ADMIN PANEL
+    # =====================================================
 
     if st.session_state.admin_unlocked:
 
-        action = st.radio(
-            "Select File Action",
-            ["Override Existing Data", "Add New Data"]
+        st.markdown("---")
+
+        st.subheader("Admin Panel")
+
+        # LINE
+
+        st.session_state.selected_line = st.selectbox(
+            "Select Line",
+            [f"Line {i}" for i in range(1, 21)]
         )
 
-        if action == "Override Existing Data":
-            st.session_state.file_content = file_text
-            st.success("Data Overridden Successfully")
+        # MACHINE
 
-        elif action == "Add New Data":
-            st.session_state.file_content += "\n\n" + file_text
-            st.success("Data Added Successfully")
+        machine_options = [
+            "Upstream",
+            "Downstream",
+            "Filler",
+            "Lanfranchi",
+            "Crates Conveyor",
+            "Packer",
+            "Stacker",
+            "Palletizer",
+            "Stretch Machine",
+            "Conveyor"
+        ]
 
-    else:
+        st.session_state.selected_machine = st.selectbox(
+            "Select Machine",
+            machine_options
+        )
 
-        if st.session_state.file_content == "":
-            st.session_state.file_content = file_text
-            st.success("Initial Data Loaded")
-        else:
-            st.warning("Admin Unlock Required To Modify Existing Data")
+        # FILE UPLOAD
+
+        uploaded_file = st.file_uploader(
+            "Upload Technical Data",
+            type=["txt"]
+        )
+
+        if uploaded_file is not None:
+
+            file_text = uploaded_file.read().decode("utf-8")
+
+            action = st.radio(
+                "Select Action",
+                ["Add Data", "Override Data"]
+            )
+
+            memory_key = f"""
+{st.session_state.selected_line}
+_{st.session_state.selected_machine}
+"""
+
+            if st.button("Process Data"):
+
+                # ADD DATA
+
+                if action == "Add Data":
+
+                    existing_data = st.session_state.knowledge_base.get(
+                        memory_key,
+                        ""
+                    )
+
+                    st.session_state.knowledge_base[memory_key] = (
+                        existing_data + "\n\n" + file_text
+                    )
+
+                    st.success("Data Added Successfully")
+
+                # OVERRIDE DATA
+
+                elif action == "Override Data":
+
+                    st.session_state.knowledge_base[memory_key] = file_text
+
+                    st.success("Data Overridden Successfully")
+
+        # =================================================
+        # DELETE MEMORY
+        # =================================================
+
+        st.markdown("---")
+
+        if len(st.session_state.knowledge_base) > 0:
+
+            delete_key = st.selectbox(
+                "Delete Saved Data",
+                list(st.session_state.knowledge_base.keys())
+            )
+
+            if st.button("Delete Selected Data"):
+
+                del st.session_state.knowledge_base[delete_key]
+
+                st.success("Data Deleted")
+
+                st.rerun()
+
+        # =================================================
+        # LOGOUT
+        # =================================================
+
+        st.markdown("---")
+
+        if st.button("Logout"):
+
+            st.session_state.admin_unlocked = False
+
+            st.success("Logged Out")
+
+            st.rerun()
 
 # =========================================================
-# CURRENT SELECTION
+# MAIN SCREEN
 # =========================================================
 
-st.markdown("## Current Selection")
+st.title("KAZIM AI")
 
-st.markdown(f"""
-- **Line:** {line}
-- **Machine:** {machine}
-""")
+st.caption("Industrial AI Diagnostic Assistant")
 
 # =========================================================
-# CHECK API KEY
+# CURRENT ACTIVE MEMORY
+# =========================================================
+
+active_memory_key = f"""
+{st.session_state.selected_line}
+_{st.session_state.selected_machine}
+"""
+
+uploaded_data = st.session_state.knowledge_base.get(
+    active_memory_key,
+    ""
+)
+
+# =========================================================
+# API CHECK
 # =========================================================
 
 if "GROQ_API_KEY" not in st.secrets:
-    st.error("Groq API Key Not Found In Streamlit Secrets")
+
+    st.error("Groq API Key Missing")
+
     st.stop()
 
 # =========================================================
@@ -128,31 +304,39 @@ client = Groq(
 )
 
 # =========================================================
-# DISPLAY CHAT HISTORY
+# CHAT HISTORY
 # =========================================================
 
 for msg in st.session_state.messages:
+
     with st.chat_message(msg["role"]):
+
         st.markdown(msg["content"])
 
 # =========================================================
-# USER INPUT
+# CHAT INPUT
 # =========================================================
 
-user_question = st.chat_input(
-    "Ask Technical Question..."
+prompt = st.chat_input(
+    "Ask fault code, alarm, PLC issue, breakdown or query..."
 )
 
-if user_question:
+# =========================================================
+# AI PROCESS
+# =========================================================
+
+if prompt:
 
     # USER MESSAGE
+
     st.session_state.messages.append({
         "role": "user",
-        "content": user_question
+        "content": prompt
     })
 
     with st.chat_message("user"):
-        st.markdown(user_question)
+
+        st.markdown(prompt)
 
     # =====================================================
     # SYSTEM PROMPT
@@ -161,38 +345,29 @@ if user_question:
     system_prompt = f"""
 You are KAZIM AI.
 
-You are a senior industrial maintenance engineer.
+You are an industrial maintenance engineer.
 
 Current Line:
-{line}
+{st.session_state.selected_line}
 
 Current Machine:
-{machine}
+{st.session_state.selected_machine}
 
-Use ONLY uploaded file data.
-
-Focus only on:
-- Module 5Y
-- Module 19
-- Module 25
-- Module 29
-- Module 30
-- Module 32
-- Module 87
-- Module 88
+Use uploaded technical memory only.
 
 Rules:
-- Give engineering answers only.
-- Mention root cause.
-- Mention corrective action.
-- Mention preventive action.
-- Give practical troubleshooting.
-- No generic AI answers.
-- If data not found say:
-"No related technical data found in uploaded file."
+- Answer like professional engineer.
+- Give root cause.
+- Give corrective action.
+- Give preventive action.
+- Mention fault finding steps.
+- Mention electrical and automation logic.
+- Keep answers practical.
+- If no data found say:
+"No related technical data found."
 
-Uploaded Technical Data:
-{st.session_state.file_content}
+Technical Memory:
+{uploaded_data}
 """
 
     # =====================================================
@@ -212,21 +387,22 @@ Uploaded Technical Data:
                     },
                     {
                         "role": "user",
-                        "content": user_question
+                        "content": prompt
                     }
                 ],
                 temperature=0.3,
-                max_tokens=1000
+                max_tokens=1200
             )
 
             ai_reply = response.choices[0].message.content
 
         except Exception as e:
+
             ai_reply = f"Error: {str(e)}"
 
         st.markdown(ai_reply)
 
-    # SAVE AI RESPONSE
+    # SAVE RESPONSE
 
     st.session_state.messages.append({
         "role": "assistant",
