@@ -8,73 +8,102 @@ from groq import Groq
 st.set_page_config(
     page_title="KAZIM AI",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # =========================================================
-# CHATGPT STYLE WHITE UI
+# MODERN CHATGPT STYLE UI
 # =========================================================
 
 st.markdown("""
 <style>
 
+/* MAIN */
 .stApp {
     background-color: white;
 }
 
-header {
-    visibility: hidden;
-}
+/* HIDE STREAMLIT */
+#MainMenu {visibility:hidden;}
+footer {visibility:hidden;}
+header {visibility:hidden;}
 
-#MainMenu {
-    visibility: hidden;
-}
-
-footer {
-    visibility: hidden;
-}
-
+/* PAGE WIDTH */
 .block-container {
-    padding-top: 2rem;
-    max-width: 900px;
+    max-width: 950px;
+    padding-top: 1rem;
 }
 
-h1, h2, h3 {
-    color: black;
-}
-
+/* SIDEBAR */
 section[data-testid="stSidebar"] {
-    background-color: #F7F7F8;
-    border-right: 1px solid #E5E5E5;
+    background-color: #F9F9F9;
+    border-right: 1px solid #E5E7EB;
 }
 
-.stChatMessage {
-    background-color: white;
-    border-radius: 10px;
-    padding: 10px;
+/* TITLE */
+.kazim-title {
+    font-size: 52px;
+    font-weight: 800;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 0px;
+    background: linear-gradient(90deg,#111827,#2563EB,#06B6D4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.stTextInput input {
-    border-radius: 10px;
+.kazim-sub {
+    text-align:center;
+    color:#6B7280;
+    margin-bottom:30px;
+    font-size:15px;
 }
 
-textarea {
-    border-radius: 12px !important;
-}
-
+/* CHAT BOX */
 div[data-testid="stChatInput"] {
-    background-color: white;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-35%);
+    width: 60%;
+    z-index: 999;
+    background-color: transparent;
 }
 
+/* TEXT AREA */
 div[data-testid="stChatInput"] textarea {
     background-color: white !important;
     color: black !important;
+    border-radius: 24px !important;
     border: 1px solid #D1D5DB !important;
-    border-radius: 14px !important;
+    min-height: 58px !important;
+    padding-top: 16px !important;
+    font-size: 16px !important;
+    box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
 }
 
+/* BUTTONS */
 .stButton>button {
     border-radius: 10px;
+}
+
+/* CHAT MESSAGE */
+div[data-testid="stChatMessage"] {
+    background-color: white;
+    padding: 12px;
+    border-radius: 14px;
+}
+
+/* SIDEBAR TITLE */
+.sidebar-title {
+    font-size:28px;
+    font-weight:700;
+    color:#111827;
+}
+
+/* SUCCESS */
+.stSuccess {
+    border-radius:10px;
 }
 
 </style>
@@ -93,8 +122,11 @@ if "messages" not in st.session_state:
 if "admin_unlocked" not in st.session_state:
     st.session_state.admin_unlocked = False
 
+if "show_admin" not in st.session_state:
+    st.session_state.show_admin = False
+
 if "selected_line" not in st.session_state:
-    st.session_state.selected_line = "Line 1"
+    st.session_state.selected_line = "Line 18"
 
 if "selected_machine" not in st.session_state:
     st.session_state.selected_machine = "Filler"
@@ -105,27 +137,32 @@ if "selected_machine" not in st.session_state:
 
 with st.sidebar:
 
-    st.title("KAZIM AI")
+    st.markdown(
+        '<div class="sidebar-title">KAZIM AI</div>',
+        unsafe_allow_html=True
+    )
 
     st.markdown("---")
 
-    # CLEAR CHAT
+    # =====================================================
+    # DELETE CHAT
+    # =====================================================
 
-    if st.button("🗑 Delete Chat History"):
+    if st.button("🗑 Clear Chat History"):
+
         st.session_state.messages = []
+
         st.rerun()
 
     st.markdown("---")
 
+    # =====================================================
     # ADMIN ACCESS
+    # =====================================================
 
-    admin_toggle = st.button("🔐 Admin Access")
+    if st.button("🔐 Admin Access"):
 
-    if admin_toggle:
         st.session_state.show_admin = True
-
-    if "show_admin" not in st.session_state:
-        st.session_state.show_admin = False
 
     if st.session_state.show_admin:
 
@@ -140,9 +177,10 @@ with st.sidebar:
 
                 st.session_state.admin_unlocked = True
 
-                st.success("Admin Mode Enabled")
+                st.success("Admin Access Granted")
 
             else:
+
                 st.error("Wrong Password")
 
     # =====================================================
@@ -155,14 +193,20 @@ with st.sidebar:
 
         st.subheader("Admin Panel")
 
-        # LINE
+        # =================================================
+        # LINE SELECT
+        # =================================================
+
+        line_options = [f"Line {i}" for i in range(1, 21)]
 
         st.session_state.selected_line = st.selectbox(
             "Select Line",
-            [f"Line {i}" for i in range(1, 21)]
+            line_options
         )
 
-        # MACHINE
+        # =================================================
+        # MACHINE SELECT
+        # =================================================
 
         machine_options = [
             "Upstream",
@@ -182,72 +226,117 @@ with st.sidebar:
             machine_options
         )
 
+        # =================================================
+        # MEMORY KEY
+        # =================================================
+
+        memory_key = (
+            st.session_state.selected_line
+            + "_"
+            + st.session_state.selected_machine
+        )
+
+        # =================================================
         # FILE UPLOAD
+        # =================================================
 
         uploaded_file = st.file_uploader(
             "Upload Technical Data",
-            type=["txt"]
+            type=["txt"],
+            key=memory_key
         )
+
+        # =================================================
+        # FILE ACTION
+        # =================================================
+
+        action = st.radio(
+            "Select Action",
+            [
+                "Add Data",
+                "Override Data"
+            ]
+        )
+
+        # =================================================
+        # PROCESS FILE
+        # =================================================
 
         if uploaded_file is not None:
 
-            file_text = uploaded_file.read().decode("utf-8")
-
-            action = st.radio(
-                "Select Action",
-                ["Add Data", "Override Data"]
-            )
-
-            memory_key = f"""
-{st.session_state.selected_line}
-_{st.session_state.selected_machine}
-"""
-
             if st.button("Process Data"):
 
+                file_text = uploaded_file.read().decode("utf-8")
+
+                # =========================================
                 # ADD DATA
+                # =========================================
 
                 if action == "Add Data":
 
-                    existing_data = st.session_state.knowledge_base.get(
+                    old_data = st.session_state.knowledge_base.get(
                         memory_key,
                         ""
                     )
 
                     st.session_state.knowledge_base[memory_key] = (
-                        existing_data + "\n\n" + file_text
+                        old_data
+                        + "\n\n"
+                        + file_text
                     )
 
-                    st.success("Data Added Successfully")
+                    st.success(
+                        f"Data Added To {memory_key}"
+                    )
 
+                # =========================================
                 # OVERRIDE DATA
+                # =========================================
 
-                elif action == "Override Data":
+                if action == "Override Data":
 
                     st.session_state.knowledge_base[memory_key] = file_text
 
-                    st.success("Data Overridden Successfully")
+                    st.success(
+                        f"Data Overridden For {memory_key}"
+                    )
 
         # =================================================
-        # DELETE MEMORY
+        # SHOW ALL SAVED MEMORY
         # =================================================
 
         st.markdown("---")
 
+        st.subheader("Saved Machine Memory")
+
         if len(st.session_state.knowledge_base) > 0:
 
-            delete_key = st.selectbox(
-                "Delete Saved Data",
-                list(st.session_state.knowledge_base.keys())
+            saved_keys = list(
+                st.session_state.knowledge_base.keys()
             )
 
-            if st.button("Delete Selected Data"):
+            delete_key = st.selectbox(
+                "Select Memory",
+                saved_keys
+            )
+
+            # =============================================
+            # DELETE MEMORY
+            # =============================================
+
+            if st.button("Delete Selected Memory"):
 
                 del st.session_state.knowledge_base[delete_key]
 
-                st.success("Data Deleted")
+                st.success(
+                    f"{delete_key} Deleted"
+                )
 
                 st.rerun()
+
+        else:
+
+            st.info("No Saved Memory")
 
         # =================================================
         # LOGOUT
@@ -259,26 +348,35 @@ _{st.session_state.selected_machine}
 
             st.session_state.admin_unlocked = False
 
+            st.session_state.show_admin = False
+
             st.success("Logged Out")
 
             st.rerun()
 
 # =========================================================
-# MAIN SCREEN
+# MAIN TITLE
 # =========================================================
 
-st.title("KAZIM AI")
+st.markdown(
+    '<div class="kazim-title">KAZIM AI</div>',
+    unsafe_allow_html=True
+)
 
-st.caption("Industrial AI Diagnostic Assistant")
+st.markdown(
+    '<div class="kazim-sub">Industrial AI Diagnostic Assistant</div>',
+    unsafe_allow_html=True
+)
 
 # =========================================================
-# CURRENT ACTIVE MEMORY
+# CURRENT MEMORY
 # =========================================================
 
-active_memory_key = f"""
-{st.session_state.selected_line}
-_{st.session_state.selected_machine}
-"""
+active_memory_key = (
+    st.session_state.selected_line
+    + "_"
+    + st.session_state.selected_machine
+)
 
 uploaded_data = st.session_state.knowledge_base.get(
     active_memory_key,
@@ -304,7 +402,7 @@ client = Groq(
 )
 
 # =========================================================
-# CHAT HISTORY
+# DISPLAY CHAT HISTORY
 # =========================================================
 
 for msg in st.session_state.messages:
@@ -322,7 +420,7 @@ prompt = st.chat_input(
 )
 
 # =========================================================
-# AI PROCESS
+# AI RESPONSE
 # =========================================================
 
 if prompt:
@@ -345,7 +443,7 @@ if prompt:
     system_prompt = f"""
 You are KAZIM AI.
 
-You are an industrial maintenance engineer.
+You are an industrial beverage maintenance engineer.
 
 Current Line:
 {st.session_state.selected_line}
@@ -353,25 +451,25 @@ Current Line:
 Current Machine:
 {st.session_state.selected_machine}
 
-Use uploaded technical memory only.
+Use ONLY uploaded machine memory.
 
 Rules:
-- Answer like professional engineer.
-- Give root cause.
-- Give corrective action.
-- Give preventive action.
-- Mention fault finding steps.
-- Mention electrical and automation logic.
-- Keep answers practical.
+- Give industrial engineering answers.
+- Mention root cause.
+- Mention corrective action.
+- Mention preventive action.
+- Mention troubleshooting steps.
+- Mention automation/electrical logic if available.
+- Be practical and technical.
 - If no data found say:
 "No related technical data found."
 
-Technical Memory:
+Machine Memory:
 {uploaded_data}
 """
 
     # =====================================================
-    # AI RESPONSE
+    # AI GENERATION
     # =====================================================
 
     with st.chat_message("assistant"):
@@ -394,7 +492,12 @@ Technical Memory:
                 max_tokens=1200
             )
 
-            ai_reply = response.choices[0].message.content
+            ai_reply = (
+                response
+                .choices[0]
+                .message
+                .content
+            )
 
         except Exception as e:
 
@@ -402,7 +505,9 @@ Technical Memory:
 
         st.markdown(ai_reply)
 
+    # =====================================================
     # SAVE RESPONSE
+    # =====================================================
 
     st.session_state.messages.append({
         "role": "assistant",
