@@ -6,7 +6,7 @@ from groq import Groq
 # =========================================================
 
 st.set_page_config(
-    page_title="KAZIM AI - Industrial Diagnostic Tool",
+    page_title="KAZIM AI",
     layout="wide"
 )
 
@@ -42,7 +42,7 @@ machine = st.sidebar.selectbox(
 st.sidebar.markdown("---")
 
 # =========================================================
-# ADMIN LOGIN
+# ADMIN PASSWORD
 # =========================================================
 
 password = st.sidebar.text_input(
@@ -58,11 +58,15 @@ if st.sidebar.button("Unlock Admin"):
         st.sidebar.error("Wrong Password")
 
 # =========================================================
-# FILE UPLOADER
+# MAIN TITLE
 # =========================================================
 
 st.title("KAZIM AI")
 st.subheader("Industrial Diagnostic Assistant")
+
+# =========================================================
+# FILE UPLOADER
+# =========================================================
 
 uploaded_file = st.file_uploader(
     "Upload M18 Data File",
@@ -89,6 +93,7 @@ if uploaded_file is not None:
             st.success("Data Added Successfully")
 
     else:
+
         if st.session_state.file_content == "":
             st.session_state.file_content = file_text
             st.success("Initial Data Loaded")
@@ -96,14 +101,23 @@ if uploaded_file is not None:
             st.warning("Admin Unlock Required To Modify Existing Data")
 
 # =========================================================
-# SHOW CURRENT STATUS
+# CURRENT SELECTION
 # =========================================================
 
+st.markdown("## Current Selection")
+
 st.markdown(f"""
-### Current Selection
-- Line: **{line}**
-- Machine: **{machine}**
+- **Line:** {line}
+- **Machine:** {machine}
 """)
+
+# =========================================================
+# CHECK API KEY
+# =========================================================
+
+if "GROQ_API_KEY" not in st.secrets:
+    st.error("Groq API Key Not Found In Streamlit Secrets")
+    st.stop()
 
 # =========================================================
 # GROQ CLIENT
@@ -114,7 +128,7 @@ client = Groq(
 )
 
 # =========================================================
-# CHAT DISPLAY
+# DISPLAY CHAT HISTORY
 # =========================================================
 
 for msg in st.session_state.messages:
@@ -131,6 +145,7 @@ user_question = st.chat_input(
 
 if user_question:
 
+    # USER MESSAGE
     st.session_state.messages.append({
         "role": "user",
         "content": user_question
@@ -146,7 +161,7 @@ if user_question:
     system_prompt = f"""
 You are KAZIM AI.
 
-You are an industrial engineer assistant for beverage and industrial production lines.
+You are a senior industrial maintenance engineer.
 
 Current Line:
 {line}
@@ -154,9 +169,9 @@ Current Line:
 Current Machine:
 {machine}
 
-Use ONLY the uploaded industrial data for answers.
+Use ONLY uploaded file data.
 
-Focus only on these technical modules/tags:
+Focus only on:
 - Module 5Y
 - Module 19
 - Module 25
@@ -167,16 +182,16 @@ Focus only on these technical modules/tags:
 - Module 88
 
 Rules:
-- Answer like senior maintenance engineer.
-- Give short, practical troubleshooting.
-- Mention root causes.
-- Mention corrective actions.
-- Mention preventive actions.
-- Do not give generic AI answers.
-- If data not found in uploaded file, say:
-  "No related technical data found in uploaded file."
+- Give engineering answers only.
+- Mention root cause.
+- Mention corrective action.
+- Mention preventive action.
+- Give practical troubleshooting.
+- No generic AI answers.
+- If data not found say:
+"No related technical data found in uploaded file."
 
-Uploaded Data:
+Uploaded Technical Data:
 {st.session_state.file_content}
 """
 
@@ -189,7 +204,7 @@ Uploaded Data:
         try:
 
             response = client.chat.completions.create(
-                model="llama3-70b-8192",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {
                         "role": "system",
@@ -210,6 +225,8 @@ Uploaded Data:
             ai_reply = f"Error: {str(e)}"
 
         st.markdown(ai_reply)
+
+    # SAVE AI RESPONSE
 
     st.session_state.messages.append({
         "role": "assistant",
