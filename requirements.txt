@@ -5,3 +5,5 @@ PyPDF2
 google-generativeai
 numpy
 faiss-cpu
+streamlit
+openai
