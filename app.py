@@ -12,115 +12,174 @@ st.set_page_config(
 )
 
 # =========================================================
-# CHATGPT STYLE UI
+# MODERN CHATGPT STYLE UI
 # =========================================================
 
 st.markdown("""
 <style>
 
-/* MAIN */
+/* MAIN BACKGROUND */
 .stApp {
     background-color: white;
 }
 
-/* HIDE STREAMLIT */
+/* HIDE STREAMLIT DEFAULT */
 #MainMenu {visibility:hidden;}
 footer {visibility:hidden;}
 header {visibility:hidden;}
 
 /* PAGE WIDTH */
 .block-container {
-    max-width: 950px;
-    padding-top: 1rem;
-    padding-bottom: 120px;
+    max-width: 1400px !important;
+    padding-top: 1rem !important;
+    padding-bottom: 140px !important;
 }
 
 /* SIDEBAR */
 section[data-testid="stSidebar"] {
-    background-color: #F9F9F9;
+    background-color: #FAFAFA;
     border-right: 1px solid #E5E7EB;
 }
 
-/* TITLE */
-.kazim-title {
-    font-size: 58px;
+/* SIDEBAR TITLE */
+.sidebar-title {
+    font-size: 30px;
     font-weight: 800;
+    color: #111827;
+}
+
+/* MAIN TITLE */
+.kazim-title {
     text-align: center;
+    font-size: 72px;
+    font-weight: 900;
     margin-top: 10px;
     margin-bottom: 0px;
-    background: linear-gradient(90deg,#111827,#2563EB,#06B6D4);
+
+    background: linear-gradient(
+        90deg,
+        #111827,
+        #2563EB,
+        #06B6D4
+    );
+
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
+/* SUBTITLE */
 .kazim-sub {
-    text-align:center;
-    color:#6B7280;
-    margin-bottom:35px;
-    font-size:15px;
+    text-align: center;
+    color: #6B7280;
+    margin-bottom: 35px;
+    font-size: 15px;
 }
 
-/* CHAT INPUT CONTAINER */
+/* CHAT MESSAGE */
+div[data-testid="stChatMessage"] {
+    background: white;
+    border-radius: 16px;
+    padding: 12px;
+}
+
+/* BIG CHATGPT INPUT */
 div[data-testid="stChatInput"] {
-    position: fixed;
-    bottom: 18px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 78%;
-    z-index: 999;
+
+    position: fixed !important;
+
+    bottom: 20px !important;
+
+    left: 50% !important;
+
+    transform: translateX(-50%) !important;
+
+    width: 72vw !important;
+
+    max-width: 1200px !important;
+
+    min-width: 850px !important;
+
+    z-index: 999999 !important;
+
     background: transparent !important;
+
     border: none !important;
 }
 
-/* MAIN WHITE INPUT BOX */
+/* WHITE BOX */
 div[data-testid="stChatInput"] > div {
+
     background: white !important;
-    border-radius: 30px !important;
-    border: 1px solid #E5E7EB !important;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
-    padding: 8px 14px !important;
+
+    border-radius: 34px !important;
+
+    border: 1px solid #D1D5DB !important;
+
+    padding: 14px 22px !important;
+
+    box-shadow:
+        0 4px 20px rgba(0,0,0,0.08),
+        0 1px 3px rgba(0,0,0,0.05) !important;
 }
 
 /* TEXT AREA */
 div[data-testid="stChatInput"] textarea {
+
     background: white !important;
-    color: black !important;
+
+    color: #111827 !important;
+
+    font-size: 18px !important;
+
+    min-height: 40px !important;
+
     border: none !important;
+
     box-shadow: none !important;
-    font-size: 17px !important;
-    min-height: 28px !important;
+
+    padding-top: 8px !important;
 }
 
-/* REMOVE GRAY */
+/* REMOVE BORDER */
 div[data-testid="stChatInput"] textarea:focus {
+
     border: none !important;
+
     outline: none !important;
+
     box-shadow: none !important;
 }
 
 /* SEND BUTTON */
 div[data-testid="stChatInput"] button {
-    background: white !important;
+
+    background: #F9FAFB !important;
+
     border-radius: 50% !important;
+
+    width: 42px !important;
+
+    height: 42px !important;
+
+    border: 1px solid #E5E7EB !important;
 }
 
 /* BUTTONS */
 .stButton>button {
-    border-radius: 10px;
+
+    border-radius: 12px !important;
 }
 
-/* CHAT MESSAGE */
-div[data-testid="stChatMessage"] {
-    background-color: white;
-    padding: 12px;
-    border-radius: 14px;
+/* SELECT BOX */
+.stSelectbox div[data-baseweb="select"] {
+
+    border-radius: 12px !important;
 }
 
-/* SIDEBAR TITLE */
-.sidebar-title {
-    font-size:28px;
-    font-weight:700;
-    color:#111827;
+/* RADIO */
+.stRadio {
+
+    background: white;
 }
 
 </style>
@@ -211,7 +270,7 @@ with st.sidebar:
         st.subheader("Admin Panel")
 
         # =================================================
-        # SELECT LINE
+        # LINE SELECT
         # =================================================
 
         st.session_state.selected_line = st.selectbox(
@@ -220,7 +279,7 @@ with st.sidebar:
         )
 
         # =================================================
-        # SELECT MACHINE
+        # MACHINE SELECT
         # =================================================
 
         machine_options = [
@@ -274,7 +333,7 @@ with st.sidebar:
         )
 
         # =================================================
-        # PROCESS DATA
+        # PROCESS BUTTON
         # =================================================
 
         if uploaded_file is not None:
@@ -313,7 +372,7 @@ with st.sidebar:
                     )
 
         # =================================================
-        # SAVED MEMORY
+        # DELETE MEMORY
         # =================================================
 
         st.markdown("---")
@@ -376,7 +435,7 @@ st.markdown(
 )
 
 # =========================================================
-# CURRENT MEMORY
+# ACTIVE MEMORY
 # =========================================================
 
 active_memory_key = (
@@ -391,7 +450,7 @@ uploaded_data = st.session_state.knowledge_base.get(
 )
 
 # =========================================================
-# API CHECK
+# CHECK API
 # =========================================================
 
 if "GROQ_API_KEY" not in st.secrets:
@@ -409,7 +468,7 @@ client = Groq(
 )
 
 # =========================================================
-# DISPLAY CHAT HISTORY
+# DISPLAY CHAT
 # =========================================================
 
 for msg in st.session_state.messages:
@@ -465,13 +524,15 @@ Rules:
 - Mention root cause.
 - Mention corrective action.
 - Mention preventive action.
-- Mention troubleshooting steps.
-- Mention automation/electrical logic if available.
+- Mention troubleshooting.
+- Mention PLC logic if available.
+- Mention sensor/interlock logic if available.
 - Be practical and technical.
+- No generic AI answers.
 - If no data found say:
 "No related technical data found."
 
-Machine Technical Memory:
+Technical Memory:
 {uploaded_data}
 """
 
@@ -513,7 +574,7 @@ Machine Technical Memory:
         st.markdown(ai_reply)
 
     # =====================================================
-    # SAVE RESPONSE
+    # SAVE CHAT
     # =====================================================
 
     st.session_state.messages.append({
