@@ -1,5 +1,7 @@
 import streamlit as st
 from groq import Groq
+import json
+import os
 
 # =========================================================
 # PAGE CONFIG
@@ -12,7 +14,49 @@ st.set_page_config(
 )
 
 # =========================================================
-# MOBILE + DESKTOP RESPONSIVE UI
+# MEMORY FILE
+# =========================================================
+
+MEMORY_FILE = "kazim_memory.json"
+
+# =========================================================
+# LOAD MEMORY
+# =========================================================
+
+if os.path.exists(MEMORY_FILE):
+
+    with open(MEMORY_FILE, "r") as f:
+
+        knowledge_base = json.load(f)
+
+else:
+
+    knowledge_base = {}
+
+# =========================================================
+# SESSION STATES
+# =========================================================
+
+if "knowledge_base" not in st.session_state:
+    st.session_state.knowledge_base = knowledge_base
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "admin_unlocked" not in st.session_state:
+    st.session_state.admin_unlocked = False
+
+if "show_admin" not in st.session_state:
+    st.session_state.show_admin = False
+
+if "selected_line" not in st.session_state:
+    st.session_state.selected_line = "Line 18"
+
+if "selected_machine" not in st.session_state:
+    st.session_state.selected_machine = "Filler"
+
+# =========================================================
+# MODERN UI
 # =========================================================
 
 st.markdown("""
@@ -60,6 +104,7 @@ section[data-testid="stSidebar"]{
     -webkit-text-fill-color:transparent;
 }
 
+/* SUBTITLE */
 .kazim-sub{
     text-align:center;
     color:#6B7280;
@@ -70,22 +115,22 @@ section[data-testid="stSidebar"]{
 /* CHAT */
 div[data-testid="stChatMessage"]{
     background:white;
-    border-radius:18px;
+    border-radius:16px;
     padding:12px;
 }
 
-/* BIG CHAT INPUT */
+/* CHAT INPUT */
 div[data-testid="stChatInput"]{
 
     position:fixed !important;
 
-    bottom:15px !important;
+    bottom:10px !important;
 
     left:50% !important;
 
     transform:translateX(-50%) !important;
 
-    width:72vw !important;
+    width:78vw !important;
 
     max-width:1200px !important;
 
@@ -110,7 +155,7 @@ div[data-testid="stChatInput"] > div{
     0 1px 3px rgba(0,0,0,0.05) !important;
 }
 
-/* TEXTAREA */
+/* TEXT AREA */
 div[data-testid="stChatInput"] textarea{
 
     background:white !important;
@@ -126,7 +171,7 @@ div[data-testid="stChatInput"] textarea{
     box-shadow:none !important;
 }
 
-/* BUTTON */
+/* SEND BUTTON */
 div[data-testid="stChatInput"] button{
 
     background:#F9FAFB !important;
@@ -140,7 +185,7 @@ div[data-testid="stChatInput"] button{
     border:1px solid #E5E7EB !important;
 }
 
-/* MOBILE RESPONSIVE */
+/* MOBILE */
 @media (max-width: 768px){
 
     .kazim-title{
@@ -153,23 +198,23 @@ div[data-testid="stChatInput"] button{
 
     div[data-testid="stChatInput"]{
 
-        width:95vw !important;
+        width:96vw !important;
 
         left:50% !important;
 
-        bottom:10px !important;
+        bottom:8px !important;
     }
 
     div[data-testid="stChatInput"] > div{
 
-        padding:10px 16px !important;
-
         border-radius:24px !important;
+
+        padding:10px 14px !important;
     }
 
     div[data-testid="stChatInput"] textarea{
 
-        font-size:15px !important;
+        font-size:16px !important;
     }
 
     .block-container{
@@ -177,7 +222,7 @@ div[data-testid="stChatInput"] button{
     }
 }
 
-/* BUTTON STYLE */
+/* BUTTON */
 .stButton>button{
     border-radius:12px !important;
 }
@@ -191,28 +236,6 @@ div[data-testid="stChatInput"] button{
 """, unsafe_allow_html=True)
 
 # =========================================================
-# SESSION STATES
-# =========================================================
-
-if "knowledge_base" not in st.session_state:
-    st.session_state.knowledge_base = {}
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-if "admin_unlocked" not in st.session_state:
-    st.session_state.admin_unlocked = False
-
-if "show_admin" not in st.session_state:
-    st.session_state.show_admin = False
-
-if "selected_line" not in st.session_state:
-    st.session_state.selected_line = "Line 18"
-
-if "selected_machine" not in st.session_state:
-    st.session_state.selected_machine = "Filler"
-
-# =========================================================
 # SIDEBAR
 # =========================================================
 
@@ -222,9 +245,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # =====================================================
     # CLEAR CHAT
-    # =====================================================
 
     if st.button("🗑 Clear Chat History"):
 
@@ -234,9 +255,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # =====================================================
     # ADMIN ACCESS
-    # =====================================================
 
     if st.button("🔐 Admin Access"):
 
@@ -271,18 +290,14 @@ with st.sidebar:
 
         st.subheader("Admin Panel")
 
-        # =================================================
         # LINE
-        # =================================================
 
         st.session_state.selected_line = st.selectbox(
             "Select Line",
             [f"Line {i}" for i in range(1, 21)]
         )
 
-        # =================================================
         # MACHINE
-        # =================================================
 
         machine_options = [
             "Upstream",
@@ -302,9 +317,7 @@ with st.sidebar:
             machine_options
         )
 
-        # =================================================
         # UNIQUE MACHINE MEMORY
-        # =================================================
 
         memory_key = (
             st.session_state.selected_line
@@ -312,21 +325,17 @@ with st.sidebar:
             + st.session_state.selected_machine
         )
 
-        # =================================================
-        # SHOW MEMORY STATUS
-        # =================================================
+        # MEMORY STATUS
 
         if memory_key in st.session_state.knowledge_base:
 
-            st.success(f"Memory Found: {memory_key}")
+            st.success(f"Memory Loaded: {memory_key}")
 
         else:
 
-            st.warning(f"No Memory Saved For {memory_key}")
+            st.warning(f"No Memory Found: {memory_key}")
 
-        # =================================================
         # FILE UPLOAD
-        # =================================================
 
         uploaded_file = st.file_uploader(
             "Upload Technical TXT File",
@@ -334,9 +343,7 @@ with st.sidebar:
             key="upload_" + memory_key
         )
 
-        # =================================================
         # ACTION
-        # =================================================
 
         action = st.radio(
             "Select Action",
@@ -346,9 +353,7 @@ with st.sidebar:
             ]
         )
 
-        # =================================================
-        # PROCESS
-        # =================================================
+        # PROCESS DATA
 
         if uploaded_file is not None:
 
@@ -356,9 +361,7 @@ with st.sidebar:
 
                 file_text = uploaded_file.read().decode("utf-8")
 
-                # =========================================
                 # ADD DATA
-                # =========================================
 
                 if action == "Add Data":
 
@@ -373,24 +376,36 @@ with st.sidebar:
                         + file_text
                     )
 
+                    with open(MEMORY_FILE, "w") as f:
+
+                        json.dump(
+                            st.session_state.knowledge_base,
+                            f
+                        )
+
                     st.success(
                         f"Data Added To {memory_key}"
                     )
 
-                # =========================================
                 # OVERRIDE DATA
-                # =========================================
 
                 if action == "Override Data":
 
                     st.session_state.knowledge_base[memory_key] = file_text
+
+                    with open(MEMORY_FILE, "w") as f:
+
+                        json.dump(
+                            st.session_state.knowledge_base,
+                            f
+                        )
 
                     st.success(
                         f"Data Overridden For {memory_key}"
                     )
 
         # =================================================
-        # DELETE SPECIFIC MACHINE MEMORY
+        # DELETE MEMORY
         # =================================================
 
         st.markdown("---")
@@ -412,6 +427,13 @@ with st.sidebar:
 
                 del st.session_state.knowledge_base[delete_key]
 
+                with open(MEMORY_FILE, "w") as f:
+
+                    json.dump(
+                        st.session_state.knowledge_base,
+                        f
+                    )
+
                 st.success(
                     f"{delete_key} Deleted"
                 )
@@ -422,9 +444,7 @@ with st.sidebar:
 
             st.info("No Saved Memory")
 
-        # =================================================
         # LOGOUT
-        # =================================================
 
         st.markdown("---")
 
@@ -468,7 +488,7 @@ uploaded_data = st.session_state.knowledge_base.get(
 )
 
 # =========================================================
-# API CHECK
+# CHECK API
 # =========================================================
 
 if "GROQ_API_KEY" not in st.secrets:
@@ -509,8 +529,6 @@ prompt = st.chat_input(
 
 if prompt:
 
-    # USER
-
     st.session_state.messages.append({
         "role": "user",
         "content": prompt
@@ -520,9 +538,7 @@ if prompt:
 
         st.markdown(prompt)
 
-    # =====================================================
     # SYSTEM PROMPT
-    # =====================================================
 
     system_prompt = f"""
 You are KAZIM AI.
@@ -538,25 +554,22 @@ Current Machine:
 Use ONLY uploaded technical memory.
 
 Rules:
-- Give industrial engineering answers.
-- Mention root cause.
-- Mention corrective action.
-- Mention preventive action.
-- Mention troubleshooting.
-- Mention PLC logic if available.
-- Mention sensor/interlock logic if available.
-- Be practical and technical.
-- No generic AI answers.
+- Give industrial engineering answers
+- Mention root cause
+- Mention corrective action
+- Mention preventive action
+- Mention troubleshooting
+- Mention PLC logic if available
+- Mention sensor/interlock logic if available
+- No generic AI answers
 - If no data found say:
-"No related technical data found."
+"No related technical data found"
 
 Technical Memory:
 {uploaded_data}
 """
 
-    # =====================================================
     # AI RESPONSE
-    # =====================================================
 
     with st.chat_message("assistant"):
 
