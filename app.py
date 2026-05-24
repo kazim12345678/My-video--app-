@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# MOBILE + DESKTOP FIXED UI
+# UI FIXED (NO BLUR TEXT)
 # =========================================================
 
 st.markdown("""
@@ -94,6 +94,17 @@ div[data-testid="stChatMessage"]{
     border:1px solid #F1F5F9;
 }
 
+/* USER + AI TEXT FIX */
+div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stMarkdownContainer"] li,
+div[data-testid="stMarkdownContainer"] span,
+div[data-testid="stMarkdownContainer"] strong{
+
+    color:#111827 !important;
+    opacity:1 !important;
+    font-weight:500 !important;
+}
+
 /* =====================================================
 DESKTOP CHAT INPUT
 ===================================================== */
@@ -135,13 +146,22 @@ div[data-testid="stChatInput"] textarea{
     min-height:42px !important;
     border:none !important;
     box-shadow:none !important;
+    opacity:1 !important;
+    font-weight:500 !important;
 }
 
-/* REMOVE BLUR / FOCUS */
+/* REMOVE BLUR */
 div[data-testid="stChatInput"] textarea:focus{
     outline:none !important;
     border:none !important;
     box-shadow:none !important;
+    color:#111827 !important;
+}
+
+/* PLACEHOLDER FIX */
+div[data-testid="stChatInput"] textarea::placeholder{
+    color:#6B7280 !important;
+    opacity:1 !important;
 }
 
 /* SEND BUTTON */
@@ -153,10 +173,7 @@ div[data-testid="stChatInput"] button{
     border:1px solid #E5E7EB !important;
 }
 
-/* =====================================================
-BUTTONS
-===================================================== */
-
+/* BUTTONS */
 .stButton>button{
     border-radius:12px !important;
 }
@@ -167,7 +184,6 @@ MOBILE FIX
 
 @media (max-width: 768px){
 
-    /* TITLE */
     .kazim-title{
         font-size:52px !important;
         margin-top:10px !important;
@@ -177,14 +193,13 @@ MOBILE FIX
         font-size:16px !important;
     }
 
-    /* PAGE */
     .block-container{
         padding-left:10px !important;
         padding-right:10px !important;
         padding-bottom:160px !important;
     }
 
-    /* MOBILE INPUT */
+    /* MOBILE CHAT INPUT */
     div[data-testid="stChatInput"]{
 
         position:fixed !important;
@@ -204,7 +219,6 @@ MOBILE FIX
         z-index:999999 !important;
     }
 
-    /* INPUT BOX */
     div[data-testid="stChatInput"] > div{
 
         background:#FFFFFF !important;
@@ -219,7 +233,7 @@ MOBILE FIX
             0 8px 24px rgba(0,0,0,0.08) !important;
     }
 
-    /* TEXT */
+    /* MOBILE TEXT FIX */
     div[data-testid="stChatInput"] textarea{
 
         font-size:18px !important;
@@ -227,19 +241,25 @@ MOBILE FIX
         background:#FFFFFF !important;
 
         color:#111827 !important;
-    }
 
-    /* REMOVE BLUR TEXT ISSUE */
-    div[data-testid="stChatInput"] textarea::placeholder{
-        color:#9CA3AF !important;
         opacity:1 !important;
+
+        font-weight:500 !important;
     }
 
-    /* FIX STREAMLIT FLOATING ICON OVERLAP */
+    div[data-testid="stMarkdownContainer"] p,
+    div[data-testid="stMarkdownContainer"] li,
+    div[data-testid="stMarkdownContainer"] span{
+
+        color:#111827 !important;
+        opacity:1 !important;
+        font-size:16px !important;
+    }
+
+    /* STREAMLIT FLOATING ICON FIX */
     button[kind="secondary"]{
         bottom:120px !important;
     }
-
 }
 
 </style>
@@ -285,8 +305,6 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # ADMIN ACCESS
-
     if st.button("🔐 Admin Access"):
 
         st.session_state.show_admin = True
@@ -320,14 +338,10 @@ with st.sidebar:
 
         st.subheader("Admin Panel")
 
-        # LINE
-
         st.session_state.selected_line = st.selectbox(
             "Select Line",
             [f"Line {i}" for i in range(1, 21)]
         )
-
-        # MACHINE
 
         machine_options = [
             "Upstream",
@@ -347,15 +361,11 @@ with st.sidebar:
             machine_options
         )
 
-        # MEMORY KEY
-
         memory_key = (
             st.session_state.selected_line
             + "_"
             + st.session_state.selected_machine
         )
-
-        # SHOW MEMORY STATUS
 
         if memory_key in st.session_state.knowledge_base:
 
@@ -365,15 +375,11 @@ with st.sidebar:
 
             st.warning("No Memory Loaded")
 
-        # FILE UPLOAD
-
         uploaded_file = st.file_uploader(
             "Upload Technical TXT File",
             type=["txt"],
             key=memory_key
         )
-
-        # ACTION
 
         action = st.radio(
             "Select Action",
@@ -383,8 +389,6 @@ with st.sidebar:
             ]
         )
 
-        # PROCESS DATA
-
         if uploaded_file is not None:
 
             if st.button("Process Data"):
@@ -393,8 +397,6 @@ with st.sidebar:
                     "utf-8",
                     errors="ignore"
                 )
-
-                # ADD DATA
 
                 if action == "Add Data":
 
@@ -411,8 +413,6 @@ with st.sidebar:
                         f"Data Added To {memory_key}"
                     )
 
-                # OVERRIDE
-
                 elif action == "Override Data":
 
                     st.session_state.knowledge_base[memory_key] = file_text
@@ -420,10 +420,6 @@ with st.sidebar:
                     st.success(
                         f"Data Overridden For {memory_key}"
                     )
-
-        # =================================================
-        # DELETE MEMORY
-        # =================================================
 
         st.markdown("---")
 
@@ -447,8 +443,6 @@ with st.sidebar:
         else:
 
             st.info("No Saved Memory")
-
-        # LOGOUT
 
         st.markdown("---")
 
@@ -525,7 +519,7 @@ for msg in st.session_state.messages:
 # =========================================================
 
 prompt = st.chat_input(
-    "Ask fault code, alarm, PLC issue, breakdown or technical query..."
+    "Ask fault code, PLC issue, breakdown or technical query..."
 )
 
 # =========================================================
@@ -543,8 +537,6 @@ if prompt:
 
         st.markdown(prompt)
 
-    # SYSTEM PROMPT
-
     system_prompt = f"""
 You are KAZIM AI.
 
@@ -561,12 +553,7 @@ IMPORTANT RULES:
 4. If information not found in memory say:
 "No related technical data found."
 
-5. If user asks difference between machines:
-Compare ONLY uploaded memory.
-
-6. Mention memory source names if possible.
-
-7. Give industrial engineering answers only.
+5. Compare ONLY uploaded machine memory.
 
 UPLOADED MACHINE MEMORIES:
 
