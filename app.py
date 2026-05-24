@@ -1,5 +1,7 @@
 import streamlit as st
 from groq import Groq
+import json
+import os
 
 # =========================================================
 # PAGE CONFIG
@@ -12,6 +14,54 @@ st.set_page_config(
 )
 
 # =========================================================
+# MEMORY FILE
+# =========================================================
+
+MEMORY_FILE = "kazim_memory.json"
+
+# =========================================================
+# LOAD MEMORY
+# =========================================================
+
+if os.path.exists(MEMORY_FILE):
+
+    with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+
+        knowledge_base = json.load(f)
+
+else:
+
+    knowledge_base = {}
+
+# =========================================================
+# SESSION STATES
+# =========================================================
+
+if "knowledge_base" not in st.session_state:
+
+    st.session_state.knowledge_base = knowledge_base
+
+if "messages" not in st.session_state:
+
+    st.session_state.messages = []
+
+if "admin_unlocked" not in st.session_state:
+
+    st.session_state.admin_unlocked = False
+
+if "show_admin" not in st.session_state:
+
+    st.session_state.show_admin = False
+
+if "selected_line" not in st.session_state:
+
+    st.session_state.selected_line = "Line 18"
+
+if "selected_machine" not in st.session_state:
+
+    st.session_state.selected_machine = "Filler"
+
+# =========================================================
 # MODERN UI
 # =========================================================
 
@@ -20,7 +70,7 @@ st.markdown("""
 
 /* MAIN */
 .stApp{
-    background-color:#FFFFFF;
+    background:#FFFFFF;
 }
 
 /* HIDE */
@@ -75,10 +125,10 @@ div[data-testid="stChatMessage"]{
     padding:12px;
 }
 
-/* BIG INPUT */
+/* CHAT INPUT */
 div[data-testid="stChatInput"]{
     position:fixed !important;
-    bottom:18px !important;
+    bottom:15px !important;
     left:50% !important;
     transform:translateX(-50%) !important;
     width:78vw !important;
@@ -98,7 +148,7 @@ div[data-testid="stChatInput"] > div{
     0 1px 3px rgba(0,0,0,0.05) !important;
 }
 
-/* TEXTAREA */
+/* TEXT AREA */
 div[data-testid="stChatInput"] textarea{
     font-size:18px !important;
     color:#111827 !important;
@@ -109,7 +159,11 @@ div[data-testid="stChatInput"] textarea{
 @media (max-width:768px){
 
     .kazim-title{
-        font-size:52px !important;
+        font-size:42px !important;
+    }
+
+    .kazim-sub{
+        font-size:12px !important;
     }
 
     div[data-testid="stChatInput"]{
@@ -124,33 +178,12 @@ div[data-testid="stChatInput"] textarea{
     .block-container{
         padding-left:10px !important;
         padding-right:10px !important;
+        padding-bottom:120px !important;
     }
 }
 
 </style>
 """, unsafe_allow_html=True)
-
-# =========================================================
-# SESSION STATES
-# =========================================================
-
-if "knowledge_base" not in st.session_state:
-    st.session_state.knowledge_base = {}
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-if "admin_unlocked" not in st.session_state:
-    st.session_state.admin_unlocked = False
-
-if "show_admin" not in st.session_state:
-    st.session_state.show_admin = False
-
-if "selected_line" not in st.session_state:
-    st.session_state.selected_line = "Line 18"
-
-if "selected_machine" not in st.session_state:
-    st.session_state.selected_machine = "Filler"
 
 # =========================================================
 # SIDEBAR
@@ -242,7 +275,7 @@ with st.sidebar:
             + st.session_state.selected_machine
         )
 
-        # SHOW MEMORY STATUS
+        # MEMORY STATUS
 
         if memory_key in st.session_state.knowledge_base:
 
@@ -250,7 +283,7 @@ with st.sidebar:
 
         else:
 
-            st.warning(f"No Memory For: {memory_key}")
+            st.warning(f"No Memory Found: {memory_key}")
 
         # FILE UPLOAD
 
@@ -278,7 +311,7 @@ with st.sidebar:
 
                 file_text = uploaded_file.read().decode("utf-8")
 
-                # ADD
+                # ADD DATA
 
                 if action == "Add Data":
 
@@ -293,22 +326,32 @@ with st.sidebar:
                         + file_text
                     )
 
-                    st.success(
-                        f"Data Added To {memory_key}"
-                    )
-
                 # OVERRIDE
 
                 if action == "Override Data":
 
                     st.session_state.knowledge_base[memory_key] = file_text
 
-                    st.success(
-                        f"Data Overridden For {memory_key}"
+                # SAVE MEMORY FILE
+
+                with open(
+                    MEMORY_FILE,
+                    "w",
+                    encoding="utf-8"
+                ) as f:
+
+                    json.dump(
+                        st.session_state.knowledge_base,
+                        f,
+                        indent=2
                     )
 
+                st.success(
+                    f"Memory Saved: {memory_key}"
+                )
+
         # =================================================
-        # SAVED MEMORIES
+        # SAVED MEMORY
         # =================================================
 
         st.markdown("---")
@@ -329,6 +372,18 @@ with st.sidebar:
             if st.button("Delete Selected Memory"):
 
                 del st.session_state.knowledge_base[delete_key]
+
+                with open(
+                    MEMORY_FILE,
+                    "w",
+                    encoding="utf-8"
+                ) as f:
+
+                    json.dump(
+                        st.session_state.knowledge_base,
+                        f,
+                        indent=2
+                    )
 
                 st.success(
                     f"{delete_key} Deleted"
@@ -395,11 +450,11 @@ for msg in st.session_state.messages:
 # =========================================================
 
 prompt = st.chat_input(
-    "Ask fault code, alarm, PLC issue, breakdown or query..."
+    "Ask fault code, PLC issue, alarm, breakdown or technical query..."
 )
 
 # =========================================================
-# AI
+# AI PROCESS
 # =========================================================
 
 if prompt:
@@ -414,7 +469,7 @@ if prompt:
         st.markdown(prompt)
 
     # =====================================================
-    # ALL MEMORY DATA
+    # LOAD ALL MACHINE MEMORIES
     # =====================================================
 
     all_memory = ""
@@ -423,57 +478,63 @@ if prompt:
 
         all_memory += f"""
 
-Machine Memory:
-{key}
+==================================================
+MACHINE MEMORY: {key}
+==================================================
 
-Technical Data:
 {value}
-
-====================================================
 
 """
 
     # =====================================================
-    # SYSTEM PROMPT
+    # STRICT SYSTEM PROMPT
     # =====================================================
 
     system_prompt = f"""
 You are KAZIM AI.
 
-You are a senior industrial maintenance engineer.
+You are a senior industrial automation engineer.
 
-You have multiple machine memories.
+IMPORTANT RULES:
 
-Use ALL uploaded machine memories.
+1. Use ONLY uploaded machine memory.
+2. NEVER invent technical specifications.
+3. NEVER assume PLC brands.
+4. NEVER assume machine speed.
+5. NEVER create fake production capacity.
+6. NEVER hallucinate.
+7. If data not found say:
+"No related technical data found."
 
-If user asks about:
-- M3
-- M18
-- Line 3
-- Line 18
-- Any uploaded machine
-
-Search all uploaded memories.
-
-Rules:
-- Give technical industrial answers
-- Mention root cause
-- Mention corrective action
-- Mention preventive action
-- Mention troubleshooting
-- Mention PLC logic if available
-- No generic answers
-
-If no data found say:
-"No related technical data found"
-
-All Machine Memories:
+==================================================
+DATABASE
+==================================================
 
 {all_memory}
+
+==================================================
+RESPONSE RULES
+==================================================
+
+- Use only uploaded data
+- Mention actual modules
+- Mention actual tags
+- Mention actual hardware
+- Mention actual drawing references
+- Compare only existing uploaded data
+- Do not use external AI knowledge
+
+GOOD ANSWER:
+"M3 contains B&R APC_096A PLC and PILZ safety controller."
+
+BAD ANSWER:
+"M3 production speed is 500 bottles/minute."
+
+(Forbidden unless explicitly written in database.)
 """
 
     # =====================================================
-    # RESPONSE
+    # AI RESPONSE
     # =====================================================
 
     with st.chat_message("assistant"):
@@ -492,7 +553,7 @@ All Machine Memories:
                         "content":prompt
                     }
                 ],
-                temperature=0.3,
+                temperature=0.1,
                 max_tokens=1200
             )
 
