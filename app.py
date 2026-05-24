@@ -12,63 +12,60 @@ st.set_page_config(
 )
 
 # =========================================================
-# UI FIXED (NO BLUR TEXT)
+# MOBILE + DESKTOP UI
 # =========================================================
 
 st.markdown("""
 <style>
 
-/* =====================================================
-MAIN
-===================================================== */
-
-html, body, [class*="css"]  {
-    font-family: sans-serif;
-}
+/* =========================================================
+MAIN APP
+========================================================= */
 
 .stApp{
-    background: #F8FAFC;
+    background-color:#F5F7FA;
 }
 
-/* HIDE STREAMLIT */
+/* Hide Streamlit */
 #MainMenu {visibility:hidden;}
 footer {visibility:hidden;}
 header {visibility:hidden;}
 
-/* =====================================================
-CONTAINER
-===================================================== */
+/* =========================================================
+MAIN CONTAINER
+========================================================= */
 
 .block-container{
-    padding-top: 1rem;
-    padding-bottom: 140px;
-    max-width: 1500px;
+    padding-top:1rem !important;
+    padding-bottom:140px !important;
+    max-width:1400px !important;
 }
 
-/* =====================================================
+/* =========================================================
 SIDEBAR
-===================================================== */
+========================================================= */
 
 section[data-testid="stSidebar"]{
-    background: #FFFFFF;
-    border-right: 1px solid #E5E7EB;
+    background:#FFFFFF;
+    border-right:1px solid #E5E7EB;
 }
 
-/* =====================================================
+/* =========================================================
 TITLE
-===================================================== */
+========================================================= */
 
 .kazim-title{
     text-align:center;
     font-size:72px;
     font-weight:900;
-    margin-top:20px;
+    line-height:1;
+    margin-top:10px;
 
     background: linear-gradient(
         90deg,
         #1D4ED8,
         #2563EB,
-        #0EA5E9
+        #38BDF8
     );
 
     -webkit-background-clip:text;
@@ -78,36 +75,32 @@ TITLE
 .kazim-sub{
     text-align:center;
     color:#6B7280;
-    margin-bottom:40px;
-    font-size:18px;
+    font-size:16px;
+    margin-bottom:30px;
 }
 
-/* =====================================================
+/* =========================================================
 CHAT MESSAGE
-===================================================== */
+========================================================= */
 
 div[data-testid="stChatMessage"]{
-    background:white;
-    border-radius:18px;
-    padding:14px;
-    margin-bottom:10px;
-    border:1px solid #F1F5F9;
+    background:white !important;
+    border-radius:18px !important;
+    padding:14px !important;
+    margin-bottom:12px !important;
+    box-shadow:0 1px 4px rgba(0,0,0,0.04);
 }
 
-/* USER + AI TEXT FIX */
-div[data-testid="stMarkdownContainer"] p,
-div[data-testid="stMarkdownContainer"] li,
-div[data-testid="stMarkdownContainer"] span,
-div[data-testid="stMarkdownContainer"] strong{
-
+/* TEXT FIX */
+div[data-testid="stMarkdownContainer"] p{
     color:#111827 !important;
     opacity:1 !important;
-    font-weight:500 !important;
+    font-size:16px !important;
 }
 
-/* =====================================================
-DESKTOP CHAT INPUT
-===================================================== */
+/* =========================================================
+CHAT INPUT DESKTOP
+========================================================= */
 
 div[data-testid="stChatInput"]{
     position:fixed !important;
@@ -124,142 +117,126 @@ div[data-testid="stChatInput"]{
 }
 
 /* INPUT BOX */
-div[data-testid="stChatInput"] > div{
-    background:#FFFFFF !important;
 
-    border-radius:40px !important;
+div[data-testid="stChatInput"] > div{
+    background:white !important;
+
+    border-radius:36px !important;
 
     border:1px solid #D1D5DB !important;
 
-    padding:14px 24px !important;
+    padding:12px 20px !important;
 
     box-shadow:
-        0 10px 25px rgba(0,0,0,0.06),
-        0 2px 6px rgba(0,0,0,0.04) !important;
+        0 10px 30px rgba(0,0,0,0.08),
+        0 2px 8px rgba(0,0,0,0.04) !important;
 }
 
 /* TEXT AREA */
+
 div[data-testid="stChatInput"] textarea{
-    background:#FFFFFF !important;
+    background:white !important;
     color:#111827 !important;
-    font-size:20px !important;
-    min-height:42px !important;
+    font-size:18px !important;
     border:none !important;
     box-shadow:none !important;
-    opacity:1 !important;
-    font-weight:500 !important;
+    min-height:40px !important;
 }
 
-/* REMOVE BLUR */
+/* REMOVE FOCUS */
+
 div[data-testid="stChatInput"] textarea:focus{
-    outline:none !important;
     border:none !important;
+    outline:none !important;
     box-shadow:none !important;
-    color:#111827 !important;
 }
 
-/* PLACEHOLDER FIX */
-div[data-testid="stChatInput"] textarea::placeholder{
-    color:#6B7280 !important;
-    opacity:1 !important;
-}
+/* BUTTON */
 
-/* SEND BUTTON */
 div[data-testid="stChatInput"] button{
-    border-radius:50% !important;
-    height:48px !important;
-    width:48px !important;
     background:#F3F4F6 !important;
+    border-radius:50% !important;
     border:1px solid #E5E7EB !important;
+    width:42px !important;
+    height:42px !important;
 }
 
-/* BUTTONS */
+/* =========================================================
+BUTTONS
+========================================================= */
+
 .stButton>button{
     border-radius:12px !important;
 }
 
-/* =====================================================
+/* =========================================================
 MOBILE FIX
-===================================================== */
+========================================================= */
 
 @media (max-width: 768px){
 
     .kazim-title{
         font-size:52px !important;
-        margin-top:10px !important;
     }
 
     .kazim-sub{
-        font-size:16px !important;
+        font-size:14px !important;
     }
 
     .block-container{
-        padding-left:10px !important;
-        padding-right:10px !important;
-        padding-bottom:160px !important;
+        padding-left:12px !important;
+        padding-right:12px !important;
+        padding-bottom:170px !important;
     }
 
-    /* MOBILE CHAT INPUT */
+    /* MOBILE CHAT BOX */
+
     div[data-testid="stChatInput"]{
 
-        position:fixed !important;
+        left:0px !important;
+        right:0px !important;
+        bottom:12px !important;
 
-        left:50% !important;
+        transform:none !important;
 
-        transform:translateX(-50%) !important;
+        width:100% !important;
+        min-width:100% !important;
+        max-width:100% !important;
 
-        bottom:70px !important;
-
-        width:92vw !important;
-
-        min-width:unset !important;
-
-        max-width:unset !important;
-
-        z-index:999999 !important;
+        padding-left:10px !important;
+        padding-right:10px !important;
     }
 
     div[data-testid="stChatInput"] > div{
 
-        background:#FFFFFF !important;
-
-        border-radius:34px !important;
-
-        padding:16px 20px !important;
-
-        border:1px solid #D1D5DB !important;
-
-        box-shadow:
-            0 8px 24px rgba(0,0,0,0.08) !important;
+        border-radius:30px !important;
+        padding:10px 16px !important;
     }
 
-    /* MOBILE TEXT FIX */
     div[data-testid="stChatInput"] textarea{
 
-        font-size:18px !important;
-
-        background:#FFFFFF !important;
-
-        color:#111827 !important;
-
-        opacity:1 !important;
-
-        font-weight:500 !important;
-    }
-
-    div[data-testid="stMarkdownContainer"] p,
-    div[data-testid="stMarkdownContainer"] li,
-    div[data-testid="stMarkdownContainer"] span{
-
-        color:#111827 !important;
-        opacity:1 !important;
         font-size:16px !important;
+        min-height:38px !important;
+
+        color:#111827 !important;
+        opacity:1 !important;
     }
 
-    /* STREAMLIT FLOATING ICON FIX */
-    button[kind="secondary"]{
-        bottom:120px !important;
+    /* FIX BLUR TEXT */
+
+    textarea,
+    input{
+        color:#111827 !important;
+        opacity:1 !important;
+        -webkit-text-fill-color:#111827 !important;
     }
+
+    /* SIDEBAR MOBILE */
+
+    section[data-testid="stSidebar"]{
+        width:85% !important;
+    }
+
 }
 
 </style>
@@ -297,16 +274,17 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # CLEAR CHAT
+
     if st.button("🗑 Clear Chat History"):
-
         st.session_state.messages = []
-
         st.rerun()
 
     st.markdown("---")
 
-    if st.button("🔐 Admin Access"):
+    # ADMIN ACCESS
 
+    if st.button("🔐 Admin Access"):
         st.session_state.show_admin = True
 
     if st.session_state.show_admin:
@@ -321,7 +299,6 @@ with st.sidebar:
             if password == "Kazim@2026":
 
                 st.session_state.admin_unlocked = True
-
                 st.success("Admin Access Granted")
 
             else:
@@ -338,22 +315,29 @@ with st.sidebar:
 
         st.subheader("Admin Panel")
 
+        # LINE
+
         st.session_state.selected_line = st.selectbox(
             "Select Line",
             [f"Line {i}" for i in range(1, 21)]
         )
 
+        # MACHINE
+
         machine_options = [
-            "Upstream",
-            "Downstream",
+            "M1","M2","M3","M4","M5",
+            "M6","M7","M8","M9","M10",
+            "M11","M12","M13","M14","M15",
+            "M16","M17","M18",
             "Filler",
-            "Lanfranchi",
-            "Crates Conveyor",
             "Packer",
-            "Stacker",
             "Palletizer",
+            "Conveyor",
+            "Lanfranchi",
             "Stretch Machine",
-            "Conveyor"
+            "Stacker",
+            "Upstream",
+            "Downstream"
         ]
 
         st.session_state.selected_machine = st.selectbox(
@@ -361,65 +345,73 @@ with st.sidebar:
             machine_options
         )
 
+        # MEMORY KEY
+
         memory_key = (
             st.session_state.selected_line
             + "_"
             + st.session_state.selected_machine
         )
 
+        # SHOW ACTIVE MEMORY
+
         if memory_key in st.session_state.knowledge_base:
 
             st.success(f"Memory Loaded: {memory_key}")
 
-        else:
-
-            st.warning("No Memory Loaded")
+        # FILE
 
         uploaded_file = st.file_uploader(
             "Upload Technical TXT File",
             type=["txt"],
-            key=memory_key
+            key=f"uploader_{memory_key}"
         )
+
+        # ACTION
 
         action = st.radio(
             "Select Action",
-            [
-                "Add Data",
-                "Override Data"
-            ]
+            ["Add Data", "Override Data"]
         )
+
+        # PROCESS DATA
 
         if uploaded_file is not None:
 
             if st.button("Process Data"):
 
-                file_text = uploaded_file.read().decode(
-                    "utf-8",
-                    errors="ignore"
-                )
+                file_text = uploaded_file.read().decode("utf-8")
+
+                # ADD DATA
 
                 if action == "Add Data":
 
-                    if memory_key not in st.session_state.knowledge_base:
+                    existing_data = st.session_state.knowledge_base.get(
+                        memory_key,
+                        ""
+                    )
 
-                        st.session_state.knowledge_base[memory_key] = ""
-
-                    st.session_state.knowledge_base[memory_key] += (
-                        "\n\n"
+                    combined_data = (
+                        existing_data
+                        + "\n\n"
                         + file_text
                     )
 
-                    st.success(
-                        f"Data Added To {memory_key}"
-                    )
+                    st.session_state.knowledge_base[memory_key] = combined_data
+
+                    st.success(f"Data Added To {memory_key}")
+
+                # OVERRIDE
 
                 elif action == "Override Data":
 
                     st.session_state.knowledge_base[memory_key] = file_text
 
-                    st.success(
-                        f"Data Overridden For {memory_key}"
-                    )
+                    st.success(f"Data Overridden For {memory_key}")
+
+        # =================================================
+        # SAVED MEMORY
+        # =================================================
 
         st.markdown("---")
 
@@ -427,9 +419,13 @@ with st.sidebar:
 
         if len(st.session_state.knowledge_base) > 0:
 
+            saved_keys = list(
+                st.session_state.knowledge_base.keys()
+            )
+
             delete_key = st.selectbox(
                 "Select Memory To Delete",
-                list(st.session_state.knowledge_base.keys())
+                saved_keys
             )
 
             if st.button("Delete Selected Memory"):
@@ -444,12 +440,13 @@ with st.sidebar:
 
             st.info("No Saved Memory")
 
+        # LOGOUT
+
         st.markdown("---")
 
         if st.button("Logout"):
 
             st.session_state.admin_unlocked = False
-
             st.session_state.show_admin = False
 
             st.rerun()
@@ -469,25 +466,25 @@ st.markdown(
 )
 
 # =========================================================
-# LOAD ALL MEMORY
+# ALL MACHINE MEMORIES
 # =========================================================
 
-all_memory = ""
+all_machine_memory = ""
 
 for key, value in st.session_state.knowledge_base.items():
 
-    all_memory += f"""
+    all_machine_memory += f"""
 
-========================
-MEMORY SOURCE: {key}
-========================
+==========================
+MACHINE MEMORY: {key}
+==========================
 
 {value}
 
 """
 
 # =========================================================
-# CHECK API
+# API CHECK
 # =========================================================
 
 if "GROQ_API_KEY" not in st.secrets:
@@ -519,46 +516,53 @@ for msg in st.session_state.messages:
 # =========================================================
 
 prompt = st.chat_input(
-    "Ask fault code, PLC issue, breakdown or technical query..."
+    "Ask fault code, PLC issue, alarm, breakdown or technical query..."
 )
 
 # =========================================================
-# AI RESPONSE
+# AI PROCESS
 # =========================================================
 
 if prompt:
 
+    # SAVE USER MESSAGE
+
     st.session_state.messages.append({
-        "role": "user",
-        "content": prompt
+        "role":"user",
+        "content":prompt
     })
 
     with st.chat_message("user"):
 
         st.markdown(prompt)
 
+    # SYSTEM PROMPT
+
     system_prompt = f"""
 You are KAZIM AI.
 
-You are an industrial maintenance engineer.
+You are a senior industrial maintenance engineer.
 
 IMPORTANT RULES:
 
-1. Use ONLY uploaded memory data.
-
-2. NEVER create fake machine information.
-
+1. Use ONLY uploaded machine memory.
+2. NEVER create fake information.
 3. NEVER guess machine specifications.
-
-4. If information not found in memory say:
+4. If data not found say:
 "No related technical data found."
+5. Always search ALL uploaded machine memories.
+6. Mention exact machine name from memory.
+7. Do NOT mix M3 and M18 data.
+8. If user asks comparison:
+   Compare ONLY using uploaded memory.
+9. Give practical engineering answers only.
 
-5. Compare ONLY uploaded machine memory.
+ALL MACHINE MEMORIES:
 
-UPLOADED MACHINE MEMORIES:
-
-{all_memory}
+{all_machine_memory}
 """
+
+    # AI RESPONSE
 
     with st.chat_message("assistant"):
 
@@ -568,19 +572,24 @@ UPLOADED MACHINE MEMORIES:
                 model="llama-3.3-70b-versatile",
                 messages=[
                     {
-                        "role": "system",
-                        "content": system_prompt
+                        "role":"system",
+                        "content":system_prompt
                     },
                     {
-                        "role": "user",
-                        "content": prompt
+                        "role":"user",
+                        "content":prompt
                     }
                 ],
                 temperature=0.1,
                 max_tokens=1200
             )
 
-            ai_reply = response.choices[0].message.content
+            ai_reply = (
+                response
+                .choices[0]
+                .message
+                .content
+            )
 
         except Exception as e:
 
@@ -588,7 +597,9 @@ UPLOADED MACHINE MEMORIES:
 
         st.markdown(ai_reply)
 
+    # SAVE RESPONSE
+
     st.session_state.messages.append({
-        "role": "assistant",
-        "content": ai_reply
+        "role":"assistant",
+        "content":ai_reply
     })
