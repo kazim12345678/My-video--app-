@@ -1,5 +1,7 @@
 import streamlit as st
 from groq import Groq
+import json
+import os
 
 # =========================================================
 # PAGE CONFIG
@@ -10,6 +12,36 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# =========================================================
+# MEMORY FILE
+# =========================================================
+
+MEMORY_FILE = "memory.json"
+
+# LOAD MEMORY
+
+if os.path.exists(MEMORY_FILE):
+
+    with open(MEMORY_FILE, "r") as f:
+
+        knowledge_data = json.load(f)
+
+else:
+
+    knowledge_data = {}
+
+# SAVE MEMORY FUNCTION
+
+def save_memory():
+
+    with open(MEMORY_FILE, "w") as f:
+
+        json.dump(
+            st.session_state.knowledge_base,
+            f,
+            indent=4
+        )
 
 # =========================================================
 # CSS
@@ -63,7 +95,7 @@ div[data-testid="stChatMessage"]{
     color:#111827 !important;
 }
 
-/* FORCE TEXT VISIBLE */
+/* FORCE TEXT */
 div[data-testid="stChatMessage"] *{
     color:#111827 !important;
     opacity:1 !important;
@@ -136,7 +168,8 @@ div[data-testid="stChatInput"] textarea{
 # =========================================================
 
 if "knowledge_base" not in st.session_state:
-    st.session_state.knowledge_base = {}
+
+    st.session_state.knowledge_base = knowledge_data
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -239,12 +272,16 @@ if st.session_state.admin_open:
                         old_data + "\n\n" + file_text
                     )
 
+                    save_memory()
+
                     st.success(f"Data Added: {memory_key}")
 
                 # OVERRIDE
                 else:
 
                     st.session_state.knowledge_base[memory_key] = file_text
+
+                    save_memory()
 
                     st.success(f"Data Replaced: {memory_key}")
 
@@ -273,6 +310,8 @@ if st.session_state.admin_open:
             if st.button("Delete Selected Memory"):
 
                 del st.session_state.knowledge_base[delete_key]
+
+                save_memory()
 
                 st.success(f"{delete_key} Deleted")
 
