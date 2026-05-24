@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# MOBILE + DESKTOP CSS
+# CUSTOM CSS
 # =========================================================
 
 st.markdown("""
@@ -31,19 +31,26 @@ header {visibility: hidden;}
 /* PAGE */
 .block-container {
     padding-top: 1rem;
-    padding-bottom: 140px;
+    padding-bottom: 160px;
     max-width: 1500px;
 }
 
 /* SIDEBAR */
 section[data-testid="stSidebar"] {
-    background: #FFFFFF;
+    background: white;
     border-right: 1px solid #E5E7EB;
 }
 
-/* SIDEBAR SHOW ALWAYS */
-section[data-testid="stSidebar"] {
-    min-width: 320px !important;
+/* FORCE SIDEBAR MOBILE */
+@media (max-width: 768px) {
+
+    section[data-testid="stSidebar"] {
+        min-width: 280px !important;
+    }
+
+    .block-container {
+        padding-bottom: 180px !important;
+    }
 }
 
 /* TITLE */
@@ -51,7 +58,6 @@ section[data-testid="stSidebar"] {
     text-align: center;
     font-size: 72px;
     font-weight: 900;
-    margin-top: 10px;
 
     background: linear-gradient(
         90deg,
@@ -72,70 +78,90 @@ section[data-testid="stSidebar"] {
     margin-bottom: 30px;
 }
 
-/* CHAT MESSAGE */
+/* CHAT */
 div[data-testid="stChatMessage"] {
     background: white !important;
-    border-radius: 18px !important;
+    border-radius: 16px !important;
     padding: 14px !important;
-    margin-bottom: 14px !important;
     color: black !important;
 }
 
-/* CHAT TEXT FIX */
+/* FIX BLUR TEXT */
 div[data-testid="stChatMessage"] p {
     color: black !important;
     opacity: 1 !important;
 }
 
-/* INPUT BOX */
+/* CHAT INPUT */
 div[data-testid="stChatInput"] {
+
     position: fixed !important;
+
     bottom: 20px !important;
+
     left: 50% !important;
+
     transform: translateX(-50%) !important;
+
     width: 72vw !important;
+
     max-width: 1100px !important;
+
     z-index: 999999 !important;
 }
 
 /* INPUT INNER */
 div[data-testid="stChatInput"] > div {
+
     background: white !important;
+
     border-radius: 35px !important;
+
     border: 1px solid #D1D5DB !important;
-    padding: 12px 22px !important;
+
+    padding: 12px 20px !important;
 
     box-shadow:
-        0 4px 20px rgba(0,0,0,0.08) !important;
+        0 4px 18px rgba(0,0,0,0.08) !important;
 }
 
 /* TEXTAREA */
 div[data-testid="stChatInput"] textarea {
+
     background: white !important;
+
     color: black !important;
+
     font-size: 18px !important;
+
     opacity: 1 !important;
 }
 
 /* PLACEHOLDER */
 textarea::placeholder {
+
     color: #6B7280 !important;
+
     opacity: 1 !important;
 }
 
 /* SEND BUTTON */
 div[data-testid="stChatInput"] button {
+
     border-radius: 50% !important;
+
     height: 45px !important;
+
     width: 45px !important;
 }
 
-/* BUTTON */
+/* BUTTONS */
 .stButton>button {
+
     border-radius: 12px !important;
 }
 
-/* MOBILE FIX */
+/* MOBILE INPUT */
 @media (max-width: 768px) {
 
     .kazim-title {
@@ -149,30 +175,13 @@ div[data-testid="stChatInput"] button {
     div[data-testid="stChatInput"] {
 
         width: 95vw !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
+
         bottom: 12px !important;
-    }
-
-    div[data-testid="stChatInput"] > div {
-
-        border-radius: 30px !important;
-        padding: 10px 16px !important;
     }
 
     div[data-testid="stChatInput"] textarea {
 
         font-size: 16px !important;
-    }
-
-    .block-container {
-
-        padding-bottom: 160px !important;
-    }
-
-    section[data-testid="stSidebar"] {
-
-        min-width: 270px !important;
     }
 }
 
@@ -180,7 +189,7 @@ div[data-testid="stChatInput"] button {
 """, unsafe_allow_html=True)
 
 # =========================================================
-# SESSION STATE
+# SESSION STATES
 # =========================================================
 
 if "messages" not in st.session_state:
@@ -218,6 +227,7 @@ with st.sidebar:
         if password == "Kazim@2026":
 
             st.session_state.admin_unlocked = True
+
             st.success("Admin Access Granted")
 
         else:
@@ -234,12 +244,20 @@ with st.sidebar:
 
         st.subheader("Machine Memory")
 
-        line = st.selectbox(
+        # =================================================
+        # LINE
+        # =================================================
+
+        selected_line = st.selectbox(
             "Select Line",
             [f"Line {i}" for i in range(1, 21)]
         )
 
-        machine = st.selectbox(
+        # =================================================
+        # MACHINE
+        # =================================================
+
+        selected_machine = st.selectbox(
             "Select Machine",
             [
                 "M1","M2","M3","M4","M5","M6",
@@ -247,23 +265,35 @@ with st.sidebar:
                 "M13","M14","M15","M16","M17","M18",
                 "Filler",
                 "Packer",
-                "Palletizer",
                 "Conveyor",
+                "Palletizer",
                 "Lanfranchi",
                 "Stacker",
                 "Stretch Machine"
             ]
         )
 
-        memory_key = f"{line}_{machine}"
+        # =================================================
+        # MEMORY KEY
+        # =================================================
 
-        st.info(f"Memory Loaded: {memory_key}")
+        memory_key = f"{selected_line}_{selected_machine}"
+
+        st.success(f"Memory Loaded: {memory_key}")
+
+        # =================================================
+        # FILE UPLOAD
+        # =================================================
 
         uploaded_file = st.file_uploader(
             "Upload Technical TXT File",
             type=["txt"],
             key=memory_key
         )
+
+        # =================================================
+        # ACTION
+        # =================================================
 
         action = st.radio(
             "Select Action",
@@ -286,16 +316,16 @@ with st.sidebar:
                     errors="ignore"
                 )
 
-                # ADD
+                # ADD DATA
                 if action == "Add Data":
 
-                    existing_data = st.session_state.knowledge_base.get(
+                    old_data = st.session_state.knowledge_base.get(
                         memory_key,
                         ""
                     )
 
                     st.session_state.knowledge_base[memory_key] = (
-                        existing_data
+                        old_data
                         + "\n\n"
                         + file_text
                     )
@@ -319,7 +349,7 @@ with st.sidebar:
 
         st.markdown("---")
 
-        st.subheader("Delete Memory")
+        st.subheader("Delete Machine Memory")
 
         if len(st.session_state.knowledge_base) > 0:
 
@@ -338,7 +368,7 @@ with st.sidebar:
 
         else:
 
-            st.info("No Saved Memory")
+            st.info("No Saved Machine Memory")
 
         # =================================================
         # LOGOUT
@@ -353,6 +383,10 @@ with st.sidebar:
             st.success("Logged Out")
 
             st.rerun()
+
+    # =====================================================
+    # CLEAR CHAT
+    # =====================================================
 
     st.markdown("---")
 
@@ -377,12 +411,13 @@ st.markdown(
 )
 
 # =========================================================
-# API CHECK
+# CHECK API KEY
 # =========================================================
 
 if "GROQ_API_KEY" not in st.secrets:
 
-    st.error("Missing GROQ API KEY")
+    st.error("GROQ API KEY Missing")
+
     st.stop()
 
 # =========================================================
@@ -427,7 +462,7 @@ if prompt:
         st.markdown(prompt)
 
     # =====================================================
-    # ALL MEMORY
+    # COMBINE ALL MEMORIES
     # =====================================================
 
     combined_memory = ""
@@ -456,15 +491,18 @@ You are an industrial maintenance AI assistant.
 IMPORTANT RULES:
 
 1. Use ONLY uploaded technical memory.
-2. NEVER create fake machine information.
-3. NEVER guess.
-4. If data not available say:
+2. NEVER invent fake machine information.
+3. NEVER guess machine specifications.
+4. If no data available say:
 "No related technical data found."
 5. Search ALL uploaded machine memories.
-6. Clearly mention which machine memory was used.
-7. Do not invent PLC brands or machine specifications.
+6. Mention exact memory source used.
+7. If user asks about M3 and M18:
+compare ONLY uploaded data.
+8. Never generate imaginary PLC brands or machine capacities.
 
-Technical Memory:
+Uploaded Machine Memories:
+
 {combined_memory}
 """
 
@@ -488,7 +526,7 @@ Technical Memory:
                         "content": prompt
                     }
                 ],
-                temperature=0.2,
+                temperature=0.1,
                 max_tokens=1200
             )
 
@@ -504,6 +542,10 @@ Technical Memory:
             ai_reply = f"Error: {str(e)}"
 
         st.markdown(ai_reply)
+
+    # =====================================================
+    # SAVE RESPONSE
+    # =====================================================
 
     st.session_state.messages.append({
         "role": "assistant",
