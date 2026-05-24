@@ -35,6 +35,37 @@ header {visibility:hidden;}
     padding-bottom: 140px !important;
 }
 
+/* MOBILE FRIENDLY */
+@media (max-width: 768px) {
+
+    .kazim-title {
+        font-size: 42px !important;
+    }
+
+    div[data-testid="stChatInput"] {
+
+        width: 95vw !important;
+
+        min-width: unset !important;
+
+        left: 50% !important;
+
+        transform: translateX(-50%) !important;
+    }
+
+    div[data-testid="stChatInput"] textarea {
+
+        font-size: 15px !important;
+    }
+
+    .block-container {
+
+        padding-left: 12px !important;
+
+        padding-right: 12px !important;
+    }
+}
+
 /* SIDEBAR */
 section[data-testid="stSidebar"] {
     background-color: #FAFAFA;
@@ -311,13 +342,24 @@ with st.sidebar:
         )
 
         # =================================================
+        # SHOW EXISTING STATUS
+        # =================================================
+
+        if memory_key in st.session_state.knowledge_base:
+
+            st.success(f"Database Exists: {memory_key}")
+
+        else:
+
+            st.info(f"No Database Yet: {memory_key}")
+
+        # =================================================
         # FILE UPLOAD
         # =================================================
 
         uploaded_file = st.file_uploader(
             "Upload Technical TXT File",
-            type=["txt"],
-            key=memory_key
+            type=["txt"]
         )
 
         # =================================================
@@ -358,7 +400,7 @@ with st.sidebar:
                     )
 
                     st.success(
-                        f"Data Added To {memory_key}"
+                        f"Data Added Successfully To {memory_key}"
                     )
 
                 # OVERRIDE DATA
@@ -368,11 +410,11 @@ with st.sidebar:
                     st.session_state.knowledge_base[memory_key] = file_text
 
                     st.success(
-                        f"Data Overridden For {memory_key}"
+                        f"Data Overridden Successfully For {memory_key}"
                     )
 
         # =================================================
-        # DELETE MEMORY
+        # SAVED MACHINE MEMORY
         # =================================================
 
         st.markdown("---")
@@ -385,20 +427,34 @@ with st.sidebar:
                 st.session_state.knowledge_base.keys()
             )
 
+            st.info(
+                f"Total Saved Machines: {len(saved_keys)}"
+            )
+
             delete_key = st.selectbox(
-                "Select Memory",
+                "Select Memory To Delete",
                 saved_keys
             )
 
             if st.button("Delete Selected Memory"):
 
-                del st.session_state.knowledge_base[delete_key]
+                if delete_key in st.session_state.knowledge_base:
 
-                st.success(
-                    f"{delete_key} Deleted"
-                )
+                    del st.session_state.knowledge_base[delete_key]
 
-                st.rerun()
+                    st.success(
+                        f"{delete_key} Deleted Successfully"
+                    )
+
+                    st.rerun()
+
+            # SHOW ALL SAVED DATABASES
+
+            st.markdown("### Saved Databases")
+
+            for item in saved_keys:
+
+                st.markdown(f"✅ {item}")
 
         else:
 
