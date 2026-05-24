@@ -73,7 +73,7 @@ div[data-testid="stChatMessage"]{
     margin-bottom:12px !important;
 }
 
-/* FIX TEXT */
+/* TEXT FIX */
 div[data-testid="stMarkdownContainer"] p{
     color:#111827 !important;
     opacity:1 !important;
@@ -235,8 +235,8 @@ if "messages" not in st.session_state:
 if "admin_unlocked" not in st.session_state:
     st.session_state.admin_unlocked = False
 
-if "show_admin" not in st.session_state:
-    st.session_state.show_admin = False
+if "show_login" not in st.session_state:
+    st.session_state.show_login = False
 
 if "selected_line" not in st.session_state:
     st.session_state.selected_line = "Line 18"
@@ -265,27 +265,38 @@ with st.sidebar:
     st.markdown("---")
 
     # =====================================================
-    # ADMIN ACCESS
+    # ADMIN ACCESS BUTTON
     # =====================================================
 
-    st.subheader("🔐 Admin Access")
+    if st.button("🔐 Admin Access"):
 
-    password = st.text_input(
-        "Enter Password",
-        type="password"
-    )
+        st.session_state.show_login = True
 
-    if st.button("Login"):
+    # =====================================================
+    # LOGIN PANEL
+    # =====================================================
 
-        if password == "Kazim@2026":
+    if st.session_state.show_login:
 
-            st.session_state.admin_unlocked = True
+        st.subheader("Admin Login")
 
-            st.success("Admin Access Granted")
+        password = st.text_input(
+            "Enter Password",
+            type="password",
+            key="admin_password"
+        )
 
-        else:
+        if st.button("Login"):
 
-            st.error("Wrong Password")
+            if password == "Kazim@2026":
+
+                st.session_state.admin_unlocked = True
+
+                st.success("Admin Access Granted")
+
+            else:
+
+                st.error("Wrong Password")
 
     # =====================================================
     # ADMIN PANEL
@@ -335,7 +346,7 @@ with st.sidebar:
             + st.session_state.selected_machine
         )
 
-        # SHOW MEMORY STATUS
+        # MEMORY STATUS
 
         if memory_key in st.session_state.knowledge_base:
 
@@ -345,7 +356,7 @@ with st.sidebar:
 
             st.info(f"No Memory Yet: {memory_key}")
 
-        # FILE UPLOAD
+        # FILE UPLOADER
 
         uploaded_file = st.file_uploader(
             "Upload Technical TXT File",
@@ -401,7 +412,7 @@ with st.sidebar:
                     )
 
         # =================================================
-        # SAVED MEMORY
+        # DELETE MEMORY
         # =================================================
 
         st.markdown("---")
@@ -440,6 +451,7 @@ with st.sidebar:
         if st.button("Logout"):
 
             st.session_state.admin_unlocked = False
+            st.session_state.show_login = False
 
             st.success("Logged Out")
 
@@ -460,7 +472,7 @@ st.markdown(
 )
 
 # =========================================================
-# COMBINE ALL MEMORIES
+# COMBINE ALL MACHINE MEMORIES
 # =========================================================
 
 all_machine_memory = ""
@@ -469,9 +481,9 @@ for key, value in st.session_state.knowledge_base.items():
 
     all_machine_memory += f"""
 
-=====================
-MACHINE: {key}
-=====================
+========================
+MACHINE MEMORY: {key}
+========================
 
 {value}
 
@@ -519,7 +531,7 @@ prompt = st.chat_input(
 
 if prompt:
 
-    # USER
+    # SAVE USER MESSAGE
 
     st.session_state.messages.append({
         "role":"user",
@@ -535,26 +547,26 @@ if prompt:
     system_prompt = f"""
 You are KAZIM AI.
 
-You are an industrial maintenance engineer.
+You are a senior industrial maintenance engineer.
 
 IMPORTANT RULES:
 
 1. Use ONLY uploaded machine memories.
 2. NEVER create fake information.
-3. NEVER guess.
+3. NEVER guess machine specifications.
 4. If data not found say:
 "No related technical data found."
 5. Search ALL uploaded machine memories.
 6. Mention exact machine name.
 7. Do NOT mix machine data.
-8. Compare ONLY from uploaded memories.
+8. Compare ONLY uploaded memory.
 
 ALL MACHINE MEMORIES:
 
 {all_machine_memory}
 """
 
-    # ASSISTANT
+    # AI RESPONSE
 
     with st.chat_message("assistant"):
 
