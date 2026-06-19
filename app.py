@@ -2,6 +2,8 @@ import streamlit as st
 from groq import Groq
 import json
 import os
+import tempfile
+import re
 
 # =========================================================
 # PAGE CONFIG
@@ -20,28 +22,63 @@ st.set_page_config(
 MEMORY_FILE = "memory.json"
 
 # LOAD MEMORY
-
 if os.path.exists(MEMORY_FILE):
-
-    with open(MEMORY_FILE, "r") as f:
-
-        knowledge_data = json.load(f)
-
+    try:
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            knowledge_data = json.load(f)
+    except Exception:
+        knowledge_data = {}
 else:
-
     knowledge_data = {}
 
-# SAVE MEMORY FUNCTION
-
+# ATOMIC SAVE MEMORY FUNCTION
 def save_memory():
+    tmp_fd, tmp_path = tempfile.mkstemp()
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            json.dump(st.session_state.knowledge_base, f, indent=4, ensure_ascii=False)
+        os.replace(tmp_path, MEMORY_FILE)
+    except Exception:
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+        raise
 
-    with open(MEMORY_FILE, "w") as f:
+# =========================================================
+# SIMPLE RETRIEVAL: relevant memories only
+# =========================================================
 
-        json.dump(
-            st.session_state.knowledge_base,
-            f,
-            indent=4
-        )
+def retrieve_relevant_memories(query: str, knowledge_base: dict, top_n: int = 5, max_chars: int = 3000):
+    """
+    Very simple keyword-based retrieval.
+    Returns concatenated memory string and list of used keys.
+    """
+    q = query.lower()
+    keywords = [w for w in re.findall(r"\w+", q) if len(w) > 2]
+    if not keywords:
+        return "", []
+
+    scores = []
+    for key, text in knowledge_base.items():
+        t = text.lower()
+        score = sum(t.count(k) for k in keywords)
+        if score > 0:
+            scores.append((score, key, text))
+
+    scores.sort(reverse=True, key=lambda x: x[0])
+
+    chosen = scores[:top_n]
+    combined = ""
+    used_keys = []
+    for _, key, text in chosen:
+        snippet = f"\n\n### MEMORY: {key}\n{text.strip()}"
+        if len(combined) + len(snippet) > max_chars:
+            break
+        combined += snippet
+        used_keys.append(key)
+
+    return combined, used_keys
 
 # =========================================================
 # CSS
@@ -168,7 +205,6 @@ div[data-testid="stChatInput"] textarea{
 # =========================================================
 
 if "knowledge_base" not in st.session_state:
-
     st.session_state.knowledge_base = knowledge_data
 
 if "messages" not in st.session_state:
@@ -187,9 +223,7 @@ if "admin_ok" not in st.session_state:
 top1, top2, top3 = st.columns([1,2,1])
 
 with top1:
-
     if st.button("⚙ Admin Access"):
-
         st.session_state.admin_open = not st.session_state.admin_open
 
 # =========================================================
@@ -197,7 +231,6 @@ with top1:
 # =========================================================
 
 if st.session_state.admin_open:
-
     st.markdown('<div class="admin-box">', unsafe_allow_html=True)
 
     password = st.text_input(
@@ -206,22 +239,18 @@ if st.session_state.admin_open:
     )
 
     if st.button("Login"):
-
-        if password == "Kazim@2026":
-
+        # Password should be set in Streamlit secrets: .streamlit/secrets.toml -> ADMIN_PASSWORD = "yourpassword"
+        if "ADMIN_PASSWORD" in st.secrets and password == st.secrets["ADMIN_PASSWORD"]:
             st.session_state.admin_ok = True
             st.success("Admin Access Granted")
-
         else:
-
-            st.error("Wrong Password")
+            st.error("Wrong Password or ADMIN_PASSWORD missing in secrets")
 
     # =====================================================
     # FULL ADMIN SECTION
     # =====================================================
 
     if st.session_state.admin_ok:
-
         st.markdown("### Upload Machine Memory")
 
         selected_line = st.selectbox(
@@ -255,38 +284,34 @@ if st.session_state.admin_open:
         )
 
         if st.button("Process Data"):
-
             if uploaded_file is not None:
+                file_bytes = uploaded_file.read()
+                try:
+                    file_text = file_bytes.decode("utf-8-sig")
+                except UnicodeDecodeError:
+                    st.error("Uploaded file is not valid UTF-8")
+                    file_text = None
 
-                file_text = uploaded_file.read().decode("utf-8")
+                if file_text is not None:
+                    file_text = file_text.strip()
+                    old_data = st.session_state.knowledge_base.get(memory_key, "").strip()
 
-                # ADD DATA
-                if action == "Add Data":
+                    # ADD DATA
+                    if action == "Add Data":
+                        if old_data:
+                            st.session_state.knowledge_base[memory_key] = old_data + "\n\n" + file_text
+                        else:
+                            st.session_state.knowledge_base[memory_key] = file_text
 
-                    old_data = st.session_state.knowledge_base.get(
-                        memory_key,
-                        ""
-                    )
+                        save_memory()
+                        st.success(f"Data Added: {memory_key}")
 
-                    st.session_state.knowledge_base[memory_key] = (
-                        old_data + "\n\n" + file_text
-                    )
-
-                    save_memory()
-
-                    st.success(f"Data Added: {memory_key}")
-
-                # OVERRIDE
-                else:
-
-                    st.session_state.knowledge_base[memory_key] = file_text
-
-                    save_memory()
-
-                    st.success(f"Data Replaced: {memory_key}")
-
+                    # OVERRIDE
+                    else:
+                        st.session_state.knowledge_base[memory_key] = file_text
+                        save_memory()
+                        st.success(f"Data Replaced: {memory_key}")
             else:
-
                 st.warning("Upload TXT file first")
 
         # =================================================
@@ -297,9 +322,7 @@ if st.session_state.admin_open:
         st.markdown("### Saved Memories")
 
         if len(st.session_state.knowledge_base) > 0:
-
             for key in st.session_state.knowledge_base.keys():
-
                 st.write("✅", key)
 
             delete_key = st.selectbox(
@@ -308,17 +331,11 @@ if st.session_state.admin_open:
             )
 
             if st.button("Delete Selected Memory"):
-
                 del st.session_state.knowledge_base[delete_key]
-
                 save_memory()
-
                 st.success(f"{delete_key} Deleted")
-
                 st.rerun()
-
         else:
-
             st.info("No Memory Saved")
 
         # =================================================
@@ -326,9 +343,7 @@ if st.session_state.admin_open:
         # =================================================
 
         if st.button("Clear Chat History"):
-
             st.session_state.messages = []
-
             st.rerun()
 
         # =================================================
@@ -336,10 +351,8 @@ if st.session_state.admin_open:
         # =================================================
 
         if st.button("Logout"):
-
             st.session_state.admin_ok = False
             st.session_state.admin_open = False
-
             st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -363,8 +376,7 @@ st.markdown(
 # =========================================================
 
 if "GROQ_API_KEY" not in st.secrets:
-
-    st.error("Missing GROQ API KEY")
+    st.error("Missing GROQ API KEY in Streamlit secrets")
     st.stop()
 
 client = Groq(
@@ -376,9 +388,7 @@ client = Groq(
 # =========================================================
 
 for msg in st.session_state.messages:
-
     with st.chat_message(msg["role"]):
-
         st.markdown(msg["content"])
 
 # =========================================================
@@ -394,25 +404,23 @@ prompt = st.chat_input(
 # =========================================================
 
 if prompt:
-
     st.session_state.messages.append({
-        "role":"user",
-        "content":prompt
+        "role": "user",
+        "content": prompt
     })
 
     with st.chat_message("user"):
-
         st.markdown(prompt)
 
     # =====================================================
-    # ALL MEMORY
+    # RETRIEVE RELEVANT MEMORY (instead of sending all memory)
     # =====================================================
 
-    all_memory = ""
+    all_memory, used_keys = retrieve_relevant_memories(prompt, st.session_state.knowledge_base)
 
-    for key, value in st.session_state.knowledge_base.items():
-
-        all_memory += f"\n\n### MEMORY: {key}\n{value}"
+    if not all_memory:
+        # If no relevant memory found, we still proceed but the system prompt instructs fallback behavior.
+        st.info("No related technical memory matched your query. The assistant will answer only if memory exists.")
 
     # =====================================================
     # SYSTEM PROMPT
@@ -435,34 +443,42 @@ Technical Memory:
 """
 
     with st.chat_message("assistant"):
-
         try:
-
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
                     {
-                        "role":"system",
-                        "content":system_prompt
+                        "role": "system",
+                        "content": system_prompt
                     },
                     {
-                        "role":"user",
-                        "content":prompt
+                        "role": "user",
+                        "content": prompt
                     }
                 ],
                 temperature=0.2,
                 max_tokens=1200
             )
 
-            ai_reply = response.choices[0].message.content
+            # defensive extraction of reply
+            ai_reply = ""
+            try:
+                ai_reply = response.choices[0].message.content
+            except Exception:
+                # fallback if response shape differs
+                ai_reply = getattr(response, "text", "No response content")
 
         except Exception as e:
-
             ai_reply = f"Error: {str(e)}"
+
+        # append used keys citation so you know which memories were used
+        if used_keys:
+            citation_text = "\n\nSources used:\n" + "\n".join(f"- {k}" for k in used_keys)
+            ai_reply = ai_reply + citation_text
 
         st.markdown(ai_reply)
 
     st.session_state.messages.append({
-        "role":"assistant",
-        "content":ai_reply
+        "role": "assistant",
+        "content": ai_reply
     })
